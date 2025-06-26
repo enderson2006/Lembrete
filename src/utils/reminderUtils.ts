@@ -1,0 +1,159 @@
+import { Reminder } from '../types/reminder';
+import { supabase } from '../lib/supabase';
+
+// Database operations
+export const fetchReminders = async (userId: string): Promise<Reminder[]> => {
+  const { data, error } = await supabase
+    .from('reminders')
+    .select('*')
+    .eq('user_id', userId)
+    .order('date', { ascending: true })
+    .order('time', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching reminders:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
+export const addReminder = async (reminder: Omit<Reminder, 'id' | 'created_at'>): Promise<Reminder | null> => {
+  const { data, error } = await supabase
+    .from('reminders')
+    .insert([reminder])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error adding reminder:', error);
+    return null;
+  }
+
+  return data;
+};
+
+export const updateReminder = async (reminder: Reminder): Promise<Reminder | null> => {
+  const { data, error } = await supabase
+    .from('reminders')
+    .update({
+      title: reminder.title,
+      description: reminder.description,
+      date: reminder.date,
+      time: reminder.time,
+      completed: reminder.completed,
+      notified: reminder.notified,
+      notification_enabled: reminder.notification_enabled,
+    })
+    .eq('id', reminder.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating reminder:', error);
+    return null;
+  }
+
+  return data;
+};
+
+export const deleteReminder = async (reminderId: string): Promise<boolean> => {
+  const { error } = await supabase
+    .from('reminders')
+    .delete()
+    .eq('id', reminderId);
+
+  if (error) {
+    console.error('Error deleting reminder:', error);
+    return false;
+  }
+
+  return true;
+};
+
+// Legacy localStorage functions (kept for migration purposes)
+export const saveReminders = (reminders: Reminder[]): void => {
+  localStorage.setItem('reminders', JSON.stringify(reminders));
+};
+
+export const loadReminders = (): Reminder[] => {
+  const stored = localStorage.getItem('reminders');
+  return stored ? JSON.parse(stored) : [];
+};
+
+// Utility functions
+export const generateId = (): string => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
+export const formatDate = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const formatTime = (date: Date): string => {
+  return date.toTimeString().split(' ')[0].slice(0, 5);
+};
+
+export const parseDateTime = (date: string, time: string): Date => {
+  return new Date(`${date}T${time}`);
+};
+
+export const isToday = (dateString: string): boolean => {
+  const today = new Date();
+  const date = new Date(dateString);
+  return date.toDateString() === today.toDateString();
+};
+
+export const isPast = (dateString: string, timeString: string): boolean => {
+  const now = new Date();
+  const reminderDate = parseDateTime(dateString, timeString);
+  return reminderDate < now;
+};
+
+export const getRemindersForDate = (reminders: Reminder[], date: string): Reminder[] => {
+  return reminders.filter(reminder => reminder.date === date);
+};
+
+export const getDaysWithReminders = (reminders: Reminder[], year: number, month: number): Set<number> => {
+  const days = new Set<number>();
+  reminders.forEach(reminder => {
+    const reminderDate = new Date(reminder.date);
+    if (reminderDate.getFullYear() === year && reminderDate.getMonth() === month) {
+      days.add(reminderDate.getDate());
+    }
+  });
+  return days;
+};
+
+// Migration function to move localStorage data to Supabase
+export const migrateLocalStorageToSupabase = async (userId: string): Promise<void> => {
+  const localReminders = loadReminders();
+  
+  if (localReminders.length === 0) {
+    return;
+  }
+
+  console.log(`Migrating ${localReminders.length} reminders to Supabase...`);
+
+  for (const reminder of localReminders) {
+    const reminderData = {
+      user_id: userId,
+      title: reminder.title,
+      description: reminder.description,
+      date: reminder.date,
+      time: reminder.time,
+      completed: reminder.completed,
+      notified: reminder.notified,
+      notification_enabled: reminder.notification_enabled ?? true,
+    };
+
+    await addReminder(reminderData);
+  }
+
+  // Clear localStorage after successful migration
+  localStorage.removeItem('reminders');
+  console.log('Migration completed successfully!');
+};
