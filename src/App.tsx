@@ -6,9 +6,11 @@ import ReminderList from './components/ReminderList';
 import EmailConfig from './components/EmailConfig';
 import Auth from './components/Auth';
 import { useAuth } from './contexts/AuthContext';
-import { Reminder, EmailConfig as EmailConfigType, ViewMode } from './types/reminder';
+import { Reminder, EmailConfig as EmailConfigType, ViewMode, Profile } from './types/reminder';
 import {
   fetchReminders,
+  fetchProfiles,
+  createProfile,
   addReminder,
   updateReminder,
   deleteReminder,
@@ -26,6 +28,7 @@ import {
 function App() {
   const { user, loading, signOut } = useAuth();
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(formatDate(new Date()));
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -52,9 +55,23 @@ function App() {
         // Migrate localStorage data to Supabase if needed
         await migrateLocalStorageToSupabase(user.id);
         
-        // Load reminders from Supabase
-        const userReminders = await fetchReminders(user.id);
+        // Load reminders and profiles from Supabase
+        const [userReminders, allProfiles] = await Promise.all([
+          fetchReminders(user.id),
+          fetchProfiles()
+        ]);
+        
         setReminders(userReminders);
+        setProfiles(allProfiles);
+        
+        // Ensure current user has a profile
+        const userProfile = allProfiles.find(p => p.id === user.id);
+        if (!userProfile && user.email) {
+          await createProfile(user.id, user.email);
+          // Reload profiles after creating user profile
+          const updatedProfiles = await fetchProfiles();
+          setProfiles(updatedProfiles);
+        }
         
         setLoadingReminders(false);
       };
@@ -111,7 +128,7 @@ function App() {
     return <Auth />;
   }
 
-  const handleSaveReminder = async (reminderData: Omit<Reminder, 'id' | 'created_at' | 'user_id'>) => {
+  const handleSaveReminder = async (reminderData: Omit<Reminder, 'id' | 'created_at' | 'owner_id'>) => {
     if (!user) return;
 
     if (editingReminder) {
@@ -129,7 +146,7 @@ function App() {
       // Add new reminder
       const newReminderData = {
         ...reminderData,
-        user_id: user.id,
+        owner_id: user.id, // Changed from user_id to owner_id
       };
       
       const result = await addReminder(newReminderData);
@@ -308,6 +325,7 @@ function App() {
                 onEdit={handleEditReminder}
                 onDelete={handleDeleteReminder}
                 onToggleComplete={handleToggleComplete}
+                currentUserId={user.id}
               />
             </div>
           </div>
@@ -321,6 +339,8 @@ function App() {
         onSave={handleSaveReminder}
         selectedDate={selectedDate}
         editingReminder={editingReminder}
+        profiles={profiles}
+        currentUserId={user.id}
       />
 
       <EmailConfig

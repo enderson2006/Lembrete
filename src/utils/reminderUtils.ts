@@ -1,12 +1,16 @@
-import { Reminder } from '../types/reminder';
+import { Reminder, Profile } from '../types/reminder';
 import { supabase } from '../lib/supabase';
 
 // Database operations
 export const fetchReminders = async (userId: string): Promise<Reminder[]> => {
   const { data, error } = await supabase
     .from('reminders')
-    .select('*')
-    .eq('user_id', userId)
+    .select(`
+      *,
+      owner:profiles!reminders_owner_id_fkey(id, email, display_name),
+      assigned_to:profiles!reminders_assigned_to_user_id_fkey(id, email, display_name)
+    `)
+    .or(`owner_id.eq.${userId},assigned_to_user_id.eq.${userId}`)
     .order('date', { ascending: true })
     .order('time', { ascending: true });
 
@@ -16,6 +20,39 @@ export const fetchReminders = async (userId: string): Promise<Reminder[]> => {
   }
 
   return data || [];
+};
+
+export const fetchProfiles = async (): Promise<Profile[]> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('display_name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching profiles:', error);
+    return [];
+  }
+
+  return data || [];
+};
+
+export const createProfile = async (userId: string, email: string, displayName?: string): Promise<Profile | null> => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert([{
+      id: userId,
+      email,
+      display_name: displayName || email.split('@')[0]
+    }])
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error creating profile:', error);
+    return null;
+  }
+
+  return data;
 };
 
 export const addReminder = async (reminder: Omit<Reminder, 'id' | 'created_at'>): Promise<Reminder | null> => {
@@ -44,6 +81,7 @@ export const updateReminder = async (reminder: Reminder): Promise<Reminder | nul
       completed: reminder.completed,
       notified: reminder.notified,
       notification_enabled: reminder.notification_enabled,
+      assigned_to_user_id: reminder.assigned_to_user_id,
     })
     .eq('id', reminder.id)
     .select()
@@ -146,7 +184,7 @@ export const migrateLocalStorageToSupabase = async (userId: string): Promise<voi
 
   for (const reminder of localReminders) {
     const reminderData = {
-      user_id: userId,
+      owner_id: userId, // Changed from user_id to owner_id
       title: reminder.title,
       description: reminder.description,
       date: reminder.date,
@@ -154,6 +192,7 @@ export const migrateLocalStorageToSupabase = async (userId: string): Promise<voi
       completed: reminder.completed,
       notified: reminder.notified,
       notification_enabled: reminder.notification_enabled ?? true,
+      assigned_to_user_id: null, // New reminders are not assigned by default
     };
 
     await addReminder(reminderData);

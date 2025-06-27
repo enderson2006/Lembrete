@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Calendar, Edit3, Trash2, Check, Undo, Bell, BellOff } from 'lucide-react';
+import { Clock, Calendar, Edit3, Trash2, Check, Undo, Bell, BellOff, User, Users } from 'lucide-react';
 import { Reminder } from '../types/reminder';
 import { isPast, createLocalDate } from '../utils/reminderUtils';
 
@@ -9,6 +9,7 @@ interface ReminderListProps {
   onEdit: (reminder: Reminder) => void;
   onDelete: (id: string) => void;
   onToggleComplete: (id: string) => void;
+  currentUserId: string;
 }
 
 const ReminderList: React.FC<ReminderListProps> = ({
@@ -17,6 +18,7 @@ const ReminderList: React.FC<ReminderListProps> = ({
   onEdit,
   onDelete,
   onToggleComplete,
+  currentUserId,
 }) => {
   const selectedDateObj = createLocalDate(selectedDate);
   const dateString = selectedDateObj.toLocaleDateString('pt-BR', {
@@ -57,6 +59,8 @@ const ReminderList: React.FC<ReminderListProps> = ({
       <div className="space-y-3">
         {sortedReminders.map((reminder) => {
           const isOverdue = !reminder.completed && isPast(reminder.date, reminder.time);
+          const isOwner = reminder.owner_id === currentUserId;
+          const isAssigned = reminder.assigned_to_user_id === currentUserId;
           
           return (
             <div
@@ -94,6 +98,22 @@ const ReminderList: React.FC<ReminderListProps> = ({
                     >
                       {reminder.title}
                     </h4>
+
+                    {/* Assignment indicator */}
+                    <div className="flex-shrink-0">
+                      {reminder.assigned_to_user_id ? (
+                        <div className="flex items-center space-x-1">
+                          <Users className="h-4 w-4 text-purple-500" title="Lembrete compartilhado" />
+                          {!isOwner && (
+                            <span className="text-xs text-purple-600 bg-purple-100 px-2 py-1 rounded-full">
+                              Atribuído
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <User className="h-4 w-4 text-gray-400" title="Lembrete pessoal" />
+                      )}
+                    </div>
 
                     {/* Notification indicator */}
                     <div className="flex-shrink-0">
@@ -144,6 +164,12 @@ const ReminderList: React.FC<ReminderListProps> = ({
                         Concluído
                       </span>
                     )}
+
+                    {!isOwner && (
+                      <span className="text-purple-600 font-medium">
+                        Atribuído por outro usuário
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -157,22 +183,28 @@ const ReminderList: React.FC<ReminderListProps> = ({
                       <Undo className="h-4 w-4" />
                     </button>
                   ) : (
-                    <button
-                      onClick={() => onEdit(reminder)}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                      title="Editar lembrete"
-                    >
-                      <Edit3 className="h-4 w-4" />
-                    </button>
+                    // Only show edit button for owners
+                    isOwner && (
+                      <button
+                        onClick={() => onEdit(reminder)}
+                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Editar lembrete"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </button>
+                    )
                   )}
                   
-                  <button
-                    onClick={() => onDelete(reminder.id)}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                    title="Excluir lembrete"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {/* Only show delete button for owners */}
+                  {isOwner && (
+                    <button
+                      onClick={() => onDelete(reminder.id)}
+                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                      title="Excluir lembrete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

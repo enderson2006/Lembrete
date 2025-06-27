@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, FileText, Bell } from 'lucide-react';
-import { Reminder } from '../types/reminder';
+import { X, Calendar, Clock, FileText, Bell, User, Users } from 'lucide-react';
+import { Reminder, Profile } from '../types/reminder';
 import { formatDate, formatTime } from '../utils/reminderUtils';
 
 interface ReminderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (reminder: Omit<Reminder, 'id' | 'created_at' | 'user_id'>) => void;
+  onSave: (reminder: Omit<Reminder, 'id' | 'created_at' | 'owner_id'>) => void;
   selectedDate: string;
   editingReminder?: Reminder | null;
+  profiles: Profile[];
+  currentUserId: string;
 }
 
 const ReminderModal: React.FC<ReminderModalProps> = ({
@@ -17,12 +19,15 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   onSave,
   selectedDate,
   editingReminder,
+  profiles,
+  currentUserId,
 }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(selectedDate);
   const [time, setTime] = useState('09:00');
   const [notificationEnabled, setNotificationEnabled] = useState(true);
+  const [assignedToUserId, setAssignedToUserId] = useState<string | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -32,12 +37,14 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
       setDate(editingReminder.date);
       setTime(editingReminder.time);
       setNotificationEnabled(editingReminder.notification_enabled);
+      setAssignedToUserId(editingReminder.assigned_to_user_id || null);
     } else {
       setTitle('');
       setDescription('');
       setDate(selectedDate);
       setTime('09:00');
       setNotificationEnabled(true);
+      setAssignedToUserId(null);
     }
     setErrors({});
   }, [editingReminder, selectedDate, isOpen]);
@@ -76,6 +83,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
       completed: editingReminder?.completed || false,
       notified: editingReminder?.notified || false,
       notification_enabled: notificationEnabled,
+      assigned_to_user_id: assignedToUserId,
     };
 
     onSave(reminderData);
@@ -88,6 +96,8 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   };
 
   if (!isOpen) return null;
+
+  const availableProfiles = profiles.filter(profile => profile.id !== currentUserId);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -177,6 +187,29 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             {errors.time && (
               <p className="mt-1 text-sm text-red-600">{errors.time}</p>
             )}
+          </div>
+
+          {/* Assign to User */}
+          <div>
+            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+              <Users className="h-4 w-4 mr-2" />
+              Atribuir para (opcional)
+            </label>
+            <select
+              value={assignedToUserId || ''}
+              onChange={(e) => setAssignedToUserId(e.target.value || null)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="">Apenas para mim</option>
+              {availableProfiles.map((profile) => (
+                <option key={profile.id} value={profile.id}>
+                  {profile.display_name || profile.email}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500">
+              Selecione um usuário para compartilhar este lembrete
+            </p>
           </div>
 
           {/* Notification Toggle */}
