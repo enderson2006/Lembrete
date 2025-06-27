@@ -15,6 +15,7 @@ import {
   formatDate,
   getDaysWithReminders,
   migrateLocalStorageToSupabase,
+  createLocalDate,
 } from './utils/reminderUtils';
 import {
   requestNotificationPermission,
@@ -172,7 +173,7 @@ function App() {
 
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
-    const selectedDateObj = new Date(date);
+    const selectedDateObj = createLocalDate(date);
     setCurrentDate(selectedDateObj);
   };
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Clock, Calendar, Edit3, Trash2, Check, Undo, Bell, BellOff } from 'lucide-react';
 import { Reminder } from '../types/reminder';
-import { isPast } from '../utils/reminderUtils';
+import { isPast, createLocalDate } from '../utils/reminderUtils';
 
 interface ReminderListProps {
   reminders: Reminder[];
@@ -18,7 +18,7 @@ const ReminderList: React.FC<ReminderListProps> = ({
   onDelete,
   onToggleComplete,
 }) => {
-  const selectedDateObj = new Date(selectedDate);
+  const selectedDateObj = createLocalDate(selectedDate);
   const dateString = selectedDateObj.toLocaleDateString('pt-BR', {
     weekday: 'long',
     year: 'numeric',

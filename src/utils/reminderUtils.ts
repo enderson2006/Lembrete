@@ -97,13 +97,19 @@ export const formatTime = (date: Date): string => {
   return date.toTimeString().split(' ')[0].slice(0, 5);
 };
 
+// Create a Date object from a date string in local timezone
+export const createLocalDate = (dateString: string): Date => {
+  // Append T00:00:00 to force local timezone interpretation
+  return new Date(`${dateString}T00:00:00`);
+};
+
 export const parseDateTime = (date: string, time: string): Date => {
   return new Date(`${date}T${time}`);
 };
 
 export const isToday = (dateString: string): boolean => {
   const today = new Date();
-  const date = new Date(dateString);
+  const date = createLocalDate(dateString);
   return date.toDateString() === today.toDateString();
 };
 
@@ -120,7 +126,7 @@ export const getRemindersForDate = (reminders: Reminder[], date: string): Remind
 export const getDaysWithReminders = (reminders: Reminder[], year: number, month: number): Set<number> => {
   const days = new Set<number>();
   reminders.forEach(reminder => {
-    const reminderDate = new Date(reminder.date);
+    const reminderDate = createLocalDate(reminder.date);
     if (reminderDate.getFullYear() === year && reminderDate.getMonth() === month) {
       days.add(reminderDate.getDate());
     }
