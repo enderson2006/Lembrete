@@ -42,20 +42,6 @@ function App() {
     enabled: false,
   });
 
-  // Show loading screen while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // Show auth screen if user is not logged in
-  if (!user) {
-    return <Auth />;
-  }
-
   // Load data on mount
   useEffect(() => {
     if (user) {
@@ -109,6 +95,20 @@ function App() {
 
     return () => clearInterval(interval);
   }, [reminders, notificationsEnabled, user]);
+
+  // Show loading screen while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Show auth screen if user is not logged in
+  if (!user) {
+    return <Auth />;
+  }
 
   const handleSaveReminder = async (reminderData: Omit<Reminder, 'id' | 'created_at' | 'user_id'>) => {
     if (!user) return;
