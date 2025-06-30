@@ -7,7 +7,7 @@ export const fetchReminders = async (userId: string): Promise<Reminder[]> => {
     .from('reminders')
     .select(`
       *,
-      owner:profiles!reminders_owner_id_fkey(id, email, display_name),
+      owner:profiles!reminders_user_id_fkey(id, email, display_name),
       assigned_to:profiles!reminders_assigned_to_user_id_fkey(id, email, display_name)
     `)
     .or(`owner_id.eq.${userId},assigned_to_user_id.eq.${userId}`)
