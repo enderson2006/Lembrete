@@ -101,15 +101,15 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto transition-colors">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors">
             {editingReminder ? 'Editar Lembrete' : 'Novo Lembrete'}
           </h3>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <X className="h-6 w-6" />
           </button>
@@ -119,7 +119,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Title */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
               <FileText className="h-4 w-4 mr-2" />
               Título
             </label>
@@ -127,33 +127,33 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.title ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors ${
+                errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="Digite o título do lembrete"
             />
             {errors.title && (
-              <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title}</p>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
               Descrição (opcional)
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder="Adicione detalhes sobre o lembrete"
             />
           </div>
 
           {/* Date */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
               <Calendar className="h-4 w-4 mr-2" />
               Data
             </label>
@@ -161,18 +161,18 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.date ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors ${
+                errors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
             />
             {errors.date && (
-              <p className="mt-1 text-sm text-red-600">{errors.date}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date}</p>
             )}
           </div>
 
           {/* Time */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
               <Clock className="h-4 w-4 mr-2" />
               Horário
             </label>
@@ -180,25 +180,25 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.time ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors ${
+                errors.time ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
             />
             {errors.time && (
-              <p className="mt-1 text-sm text-red-600">{errors.time}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.time}</p>
             )}
           </div>
 
           {/* Assign to User */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
               <Users className="h-4 w-4 mr-2" />
               Atribuir para (opcional)
             </label>
             <select
               value={assignedToUserId || ''}
               onChange={(e) => setAssignedToUserId(e.target.value || null)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
               <option value="">Apenas para mim</option>
               {availableProfiles.map((profile) => (
@@ -207,18 +207,18 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                 </option>
               ))}
             </select>
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
               Selecione um usuário para compartilhar este lembrete
             </p>
           </div>
 
           {/* Notification Toggle */}
-          <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
+          <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-colors">
             <div className="flex items-center space-x-3">
-              <Bell className="h-5 w-5 text-blue-600" />
+              <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               <div>
-                <h4 className="font-medium text-gray-900">Notificar no horário</h4>
-                <p className="text-sm text-gray-600">Receber notificação quando chegar a hora</p>
+                <h4 className="font-medium text-gray-900 dark:text-white transition-colors">Notificar no horário</h4>
+                <p className="text-sm text-gray-600 dark:text-gray-300 transition-colors">Receber notificação quando chegar a hora</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -228,7 +228,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                 onChange={(e) => setNotificationEnabled(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+              <div className="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 dark:peer-checked:bg-blue-700"></div>
             </label>
           </div>
 
@@ -237,13 +237,13 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex-1 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
             >
               {editingReminder ? 'Salvar' : 'Criar'}
             </button>

@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Bell, BellOff, LogOut } from 'lucide-react';
+import { Plus, Settings, Bell, BellOff, LogOut, Moon, Sun } from 'lucide-react';
 import Calendar from './components/Calendar';
 import ReminderModal from './components/ReminderModal';
 import ReminderList from './components/ReminderList';
 import EmailConfig from './components/EmailConfig';
 import Auth from './components/Auth';
 import { useAuth } from './contexts/AuthContext';
+import { useTheme } from './contexts/ThemeContext';
 import { Reminder, EmailConfig as EmailConfigType, ViewMode, Profile } from './types/reminder';
 import {
   fetchReminders,
@@ -27,6 +28,7 @@ import {
 
 function App() {
   const { user, loading, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -117,7 +119,7 @@ function App() {
   // Show loading screen while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -223,23 +225,23 @@ function App() {
   const pendingReminders = totalReminders - completedReminders;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors">
                 Lembrete Pro
               </h1>
-              <div className="hidden sm:flex items-center space-x-4 text-sm text-gray-600">
-                <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
+              <div className="hidden sm:flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300">
+                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full transition-colors">
                   {totalReminders} total
                 </span>
-                <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full">
+                <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full transition-colors">
                   {completedReminders} concluídos
                 </span>
-                <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full">
+                <span className="bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-3 py-1 rounded-full transition-colors">
                   {pendingReminders} pendentes
                 </span>
               </div>
@@ -247,16 +249,29 @@ function App() {
             
             <div className="flex items-center space-x-2">
               {/* User info */}
-              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600 mr-4">
+              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 mr-4">
                 <span>Olá, {user.email}</span>
               </div>
+
+              {/* Theme toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                title={theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
+              >
+                {theme === 'light' ? (
+                  <Moon className="h-5 w-5" />
+                ) : (
+                  <Sun className="h-5 w-5" />
+                )}
+              </button>
 
               <button
                 onClick={toggleNotifications}
                 className={`p-2 rounded-lg transition-colors ${
                   notificationsEnabled
-                    ? 'text-green-600 bg-green-50 hover:bg-green-100'
-                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                    ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
+                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
                 title={notificationsEnabled ? 'Notificações ativadas' : 'Ativar notificações'}
               >
@@ -269,7 +284,7 @@ function App() {
               
               <button
                 onClick={() => setIsEmailConfigOpen(true)}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 title="Configurações de e-mail"
               >
                 <Settings className="h-5 w-5" />
@@ -277,7 +292,7 @@ function App() {
 
               <button
                 onClick={handleSignOut}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                 title="Sair"
               >
                 <LogOut className="h-5 w-5" />
@@ -285,7 +300,7 @@ function App() {
               
               <button
                 onClick={handleAddReminder}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center space-x-2"
               >
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Novo Lembrete</span>
@@ -300,7 +315,7 @@ function App() {
         {loadingReminders ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-gray-600">Carregando lembretes...</span>
+            <span className="ml-3 text-gray-600 dark:text-gray-300">Carregando lembretes...</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
