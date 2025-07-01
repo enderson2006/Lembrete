@@ -5,11 +5,7 @@ import { supabase } from '../lib/supabase';
 export const fetchReminders = async (userId: string): Promise<Reminder[]> => {
   const { data, error } = await supabase
     .from('reminders')
-    .select(`
-      *,
-      owner:profiles!owner_id(id, email, display_name),
-      assigned_to:profiles!assigned_to_user_id(id, email, display_name)
-    `)
+    .select('*')
     .or(`owner_id.eq.${userId},assigned_to_user_id.eq.${userId}`)
     .order('date', { ascending: true })
     .order('time', { ascending: true });
