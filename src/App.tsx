@@ -23,8 +23,15 @@ import {
 import {
   requestNotificationPermission,
   showNotification,
-  checkForDueReminders,
+  processDueReminders,
 } from './utils/notificationUtils';
+import {
+  isPushNotificationSupported,
+  registerServiceWorker,
+  subscribeToPushNotifications,
+  unsubscribeFromPushNotifications,
+  isPushNotificationSubscribed,
+} from './utils/pushNotificationUtils';
 
 function App() {
   const { user, loading, signOut } = useAuth();
@@ -38,6 +45,7 @@ function App() {
   const [isEmailConfigOpen, setIsEmailConfigOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [loadingReminders, setLoadingReminders] = useState(false);
   const [emailConfig, setEmailConfig] = useState<EmailConfigType>({
     smtpHost: 'smtp.gmail.com',
@@ -53,6 +61,13 @@ function App() {
     if (user) {
       const loadData = async () => {
         setLoadingReminders(true);
+        
+        // Register service worker and check push notification support
+        if (isPushNotificationSupported()) {
+          await registerServiceWorker();
+          const isSubscribed = await isPushNotificationSubscribed();
+          setPushNotificationsEnabled(isSubscribed);
+        }
         
         // Migrate localStorage data to Supabase if needed
         await migrateLocalStorageToSupabase(user.id);
@@ -91,17 +106,45 @@ function App() {
     }
   }, [user]);
 
-  // Check for due reminders every minute
+  // Listen for service worker messages
+  useEffect(() => {
+    const handleServiceWorkerMessage = (event: CustomEvent) => {
+      const { reminderId } = event.detail;
+      handleToggleComplete(reminderId);
+    };
+
+    window.addEventListener('markReminderComplete', handleServiceWorkerMessage as EventListener);
+
+    return () => {
+      window.removeEventListener('markReminderComplete', handleServiceWorkerMessage as EventListener);
+    };
+  }, []);
+
+  // Check for due reminders every minute (fallback for browsers without push support)
   useEffect(() => {
     if (!user || !notificationsEnabled) return;
 
-    const interval = setInterval(() => {
-      const dueReminders = checkForDueReminders(reminders);
-      dueReminders.forEach(async (reminder) => {
-        // Only show notification if the individual reminder has notifications enabled
-        if (reminder.notification_enabled) {
+    const interval = setInterval(async () => {
+      // Process due reminders for push notifications
+      await processDueReminders(reminders);
+      
+      // Fallback: show browser notifications for browsers without push support
+      if (!pushNotificationsEnabled) {
+        const now = new Date();
+        const dueReminders = reminders.filter(reminder => {
+          if (reminder.notified || reminder.completed || !reminder.notification_enabled) {
+            return false;
+          }
+          
+          const reminderDateTime = new Date(`${reminder.date}T${reminder.time}`);
+          const timeDiff = reminderDateTime.getTime() - now.getTime();
+          
+          return timeDiff <= 60000 && timeDiff >= -60000;
+        });
+
+        for (const reminder of dueReminders) {
           showNotification(reminder);
-          // Mark as notified in database
+          // Mark as notified
           const updatedReminder = { ...reminder, notified: true };
           const result = await updateReminder(updatedReminder);
           if (result) {
@@ -110,11 +153,11 @@ function App() {
             );
           }
         }
-      });
+      }
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [reminders, notificationsEnabled, user]);
+  }, [reminders, notificationsEnabled, pushNotificationsEnabled, user]);
 
   // Show loading screen while checking authentication
   if (loading) {
@@ -148,7 +191,7 @@ function App() {
       // Add new reminder
       const newReminderData = {
         ...reminderData,
-        owner_id: user.id, // Changed from user_id to owner_id
+        owner_id: user.id,
       };
       
       const result = await addReminder(newReminderData);
@@ -205,8 +248,20 @@ function App() {
     if (!notificationsEnabled) {
       const enabled = await requestNotificationPermission();
       setNotificationsEnabled(enabled);
+      
+      // If notifications are enabled and push is supported, try to enable push notifications
+      if (enabled && isPushNotificationSupported() && user) {
+        const pushEnabled = await subscribeToPushNotifications(user.id);
+        setPushNotificationsEnabled(pushEnabled);
+      }
     } else {
       setNotificationsEnabled(false);
+      
+      // Also disable push notifications
+      if (pushNotificationsEnabled && user) {
+        await unsubscribeFromPushNotifications(user.id);
+        setPushNotificationsEnabled(false);
+      }
     }
   };
 
@@ -251,6 +306,11 @@ function App() {
               {/* User info */}
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 mr-4">
                 <span>Olá, {user.email}</span>
+                {pushNotificationsEnabled && (
+                  <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs">
+                    Push ativo
+                  </span>
+                )}
               </div>
 
               {/* Theme toggle */}
@@ -273,7 +333,13 @@ function App() {
                     ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
                     : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                 }`}
-                title={notificationsEnabled ? 'Notificações ativadas' : 'Ativar notificações'}
+                title={
+                  notificationsEnabled 
+                    ? pushNotificationsEnabled 
+                      ? 'Notificações push ativas' 
+                      : 'Notificações básicas ativas'
+                    : 'Ativar notificações'
+                }
               >
                 {notificationsEnabled ? (
                   <Bell className="h-5 w-5" />
