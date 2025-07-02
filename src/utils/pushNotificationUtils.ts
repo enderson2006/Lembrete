@@ -25,6 +25,13 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
+// Check if running in StackBlitz environment
+const isStackBlitzEnvironment = (): boolean => {
+  return window.location.hostname.includes('stackblitz') || 
+         window.location.hostname.includes('webcontainer') ||
+         window.location.hostname === 'localhost' && window.location.port === '5173';
+};
+
 // Check if push notifications are supported
 export const isPushNotificationSupported = (): boolean => {
   return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
@@ -32,6 +39,12 @@ export const isPushNotificationSupported = (): boolean => {
 
 // Register service worker
 export const registerServiceWorker = async (): Promise<ServiceWorkerRegistration | null> => {
+  // Check if running in StackBlitz environment
+  if (isStackBlitzEnvironment()) {
+    console.log('Service Workers are not supported in StackBlitz environment. Push notifications will be disabled.');
+    return null;
+  }
+
   if (!isPushNotificationSupported()) {
     console.warn('Push notifications are not supported');
     return null;
@@ -81,6 +94,12 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 
 // Subscribe to push notifications
 export const subscribeToPushNotifications = async (userId: string): Promise<boolean> => {
+  // Check if running in StackBlitz environment
+  if (isStackBlitzEnvironment()) {
+    console.log('Push notifications are not available in StackBlitz environment');
+    return false;
+  }
+
   try {
     const registration = await navigator.serviceWorker.ready;
     
@@ -143,6 +162,12 @@ const savePushSubscription = async (userId: string, subscription: PushSubscripti
 
 // Unsubscribe from push notifications
 export const unsubscribeFromPushNotifications = async (userId: string): Promise<boolean> => {
+  // Check if running in StackBlitz environment
+  if (isStackBlitzEnvironment()) {
+    console.log('Push notifications are not available in StackBlitz environment');
+    return false;
+  }
+
   try {
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
@@ -171,7 +196,7 @@ export const unsubscribeFromPushNotifications = async (userId: string): Promise<
 // Check if user is subscribed to push notifications
 export const isPushNotificationSubscribed = async (): Promise<boolean> => {
   try {
-    if (!isPushNotificationSupported()) {
+    if (!isPushNotificationSupported() || isStackBlitzEnvironment()) {
       return false;
     }
 
@@ -187,6 +212,12 @@ export const isPushNotificationSubscribed = async (): Promise<boolean> => {
 
 // Test push notification
 export const testPushNotification = async (userId: string, reminderId: string): Promise<boolean> => {
+  // Check if running in StackBlitz environment
+  if (isStackBlitzEnvironment()) {
+    console.log('Push notifications are not available in StackBlitz environment');
+    return false;
+  }
+
   try {
     const { data, error } = await supabase.functions.invoke('send-push-notification', {
       body: {
