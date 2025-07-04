@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Bell, BellOff, LogOut, Moon, Sun } from 'lucide-react';
+import { Plus, Settings, Bell, BellOff, LogOut, Moon, Sun, Send } from 'lucide-react';
 import Calendar from './components/Calendar';
 import ReminderModal from './components/ReminderModal';
 import ReminderList from './components/ReminderList';
@@ -31,6 +31,7 @@ import {
   subscribeToPushNotifications,
   unsubscribeFromPushNotifications,
   isPushNotificationSubscribed,
+  testPushNotification,
 } from './utils/pushNotificationUtils';
 
 function App() {
@@ -265,6 +266,42 @@ function App() {
     }
   };
 
+  const handleTestPushNotification = async () => {
+    if (!user) {
+      alert('Usuário não logado');
+      return;
+    }
+
+    if (!pushNotificationsEnabled) {
+      alert('Notificações push não estão ativadas. Ative primeiro as notificações.');
+      return;
+    }
+
+    let testReminderId = '';
+    
+    if (reminders.length > 0) {
+      // Use the first reminder for testing
+      testReminderId = reminders[0].id;
+    } else {
+      // Create a temporary test reminder ID
+      testReminderId = 'test-reminder-' + Date.now();
+    }
+
+    console.log('Enviando notificação de teste para reminder:', testReminderId);
+    
+    try {
+      const success = await testPushNotification(user.id, testReminderId);
+      if (success) {
+        alert('Notificação de teste enviada com sucesso! Verifique se recebeu a notificação.');
+      } else {
+        alert('Falha ao enviar notificação de teste. Verifique os logs do console para mais detalhes.');
+      }
+    } catch (error) {
+      console.error('Erro ao testar notificação push:', error);
+      alert('Erro ao testar notificação push. Verifique os logs do console.');
+    }
+  };
+
   const handleSignOut = async () => {
     await signOut();
   };
@@ -347,6 +384,17 @@ function App() {
                   <BellOff className="h-5 w-5" />
                 )}
               </button>
+
+              {/* Test Push Notification Button */}
+              {pushNotificationsEnabled && (
+                <button
+                  onClick={handleTestPushNotification}
+                  className="p-2 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
+                  title="Testar Notificação Push"
+                >
+                  <Send className="h-5 w-5" />
+                </button>
+              )}
               
               <button
                 onClick={() => setIsEmailConfigOpen(true)}
