@@ -63,6 +63,8 @@ export const checkForDueReminders = (reminders: Reminder[]): Reminder[] => {
 // Queue reminder for push notification
 export const queueReminderNotification = async (reminder: Reminder): Promise<boolean> => {
   try {
+    console.log('Queueing reminder notification for:', reminder.title);
+    
     // Add to notification queue for the owner
     const { error: ownerError } = await supabase
       .from('notification_queue')
@@ -93,7 +95,8 @@ export const queueReminderNotification = async (reminder: Reminder): Promise<boo
     }
 
     // Trigger the push notification function
-    const { error: functionError } = await supabase.functions.invoke('send-push-notification', {
+    console.log('Triggering push notification function...');
+    const { data, error: functionError } = await supabase.functions.invoke('send-push-notification', {
       body: {
         reminderId: reminder.id,
         userId: reminder.owner_id
@@ -102,22 +105,36 @@ export const queueReminderNotification = async (reminder: Reminder): Promise<boo
 
     if (functionError) {
       console.error('Failed to trigger push notification function:', functionError);
+      
+      // Show browser notification as fallback
+      showNotification(reminder);
       return false;
     }
 
+    console.log('Push notification function response:', data);
+
     // If assigned, also trigger for assigned user
     if (reminder.assigned_to_user_id && reminder.assigned_to_user_id !== reminder.owner_id) {
-      await supabase.functions.invoke('send-push-notification', {
+      const { data: assignedData, error: assignedFunctionError } = await supabase.functions.invoke('send-push-notification', {
         body: {
           reminderId: reminder.id,
           userId: reminder.assigned_to_user_id
         }
       });
+
+      if (assignedFunctionError) {
+        console.error('Failed to trigger push notification for assigned user:', assignedFunctionError);
+      } else {
+        console.log('Push notification for assigned user response:', assignedData);
+      }
     }
 
     return true;
   } catch (error) {
     console.error('Error queuing reminder notification:', error);
+    
+    // Show browser notification as fallback
+    showNotification(reminder);
     return false;
   }
 };
@@ -125,6 +142,10 @@ export const queueReminderNotification = async (reminder: Reminder): Promise<boo
 // Process due reminders and queue them for push notifications
 export const processDueReminders = async (reminders: Reminder[]): Promise<void> => {
   const dueReminders = checkForDueReminders(reminders);
+  
+  if (dueReminders.length > 0) {
+    console.log(`Processing ${dueReminders.length} due reminders`);
+  }
   
   for (const reminder of dueReminders) {
     await queueReminderNotification(reminder);
