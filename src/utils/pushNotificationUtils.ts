@@ -35,6 +35,13 @@ const isDevelopmentEnvironment = (): boolean => {
 
 // Check if push notifications are supported
 export const isPushNotificationSupported = (): boolean => {
+  // Check for StackBlitz/WebContainer environments first
+  if (window.location.hostname.includes('stackblitz') || 
+      window.location.hostname.includes('webcontainer')) {
+    console.warn('❌ Push notifications not supported in StackBlitz/WebContainer environment');
+    return false;
+  }
+
   const isSupported = 'serviceWorker' in navigator && 
                      'PushManager' in window && 
                      'Notification' in window;
