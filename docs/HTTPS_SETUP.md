@@ -92,25 +92,15 @@ mkcert localhost 127.0.0.1 ::1
 
 ## ⚠️ IMPORTANTE
 
-### Variáveis que você PRECISA configurar:
+### Variáveis que você precisa configurar:
 ```env
 VITE_SUPABASE_URL=https://seu-projeto.supabase.co
 VITE_SUPABASE_ANON_KEY=sua_chave_anonima
-VITE_VAPID_PUBLIC_KEY=BKjzQZ8rFvXhVGF2nE4L8wJxK9mP3qR7sT1uV5wX6yZ2aB3cD4eF5gH6iJ7kL8mN9oP0qR1sT2uV3wX4yZ5aB6c
-```
-
-### No Supabase Dashboard:
-```
-VAPID_PUBLIC_KEY = BKjzQZ8rFvXhVGF2nE4L8wJxK9mP3qR7sT1uV5wX6yZ2aB3cD4eF5gH6iJ7kL8mN9oP0qR1sT2uV3wX4yZ5aB6c
-VAPID_PRIVATE_KEY = aUiz-bdHb-J-3NcT4Cjdq6WgXMaM0kKi4t8kDXa3Oe8-fG9hI0jK1lM2nO3pQ4rS5tU6vW7xY8zA9bC0dE1f
-VAPID_SUBJECT = mailto:seu-email@gmail.com
 ```
 
 ## 🎯 RECOMENDAÇÃO
 
 **Para começar AGORA:**
 1. Use **Cloudflare Tunnel** ou **deploy no Netlify**
-2. Configure as **variáveis do Supabase**
-3. **Teste as notificações**!
-
-Ambas as opções são **gratuitas** e fornecem **HTTPS automático**! 🚀
+2. Configure as **variáveis de ambiente**
+3. **Teste a aplicação**!

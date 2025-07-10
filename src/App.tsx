@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Bell, BellOff, LogOut, Moon, Sun, Send } from 'lucide-react';
+import { Plus, Settings, Bell, BellOff, LogOut, Moon, Sun } from 'lucide-react';
 import Calendar from './components/Calendar';
 import ReminderModal from './components/ReminderModal';
 import ReminderList from './components/ReminderList';
@@ -23,16 +23,8 @@ import {
 import {
   requestNotificationPermission,
   showNotification,
-  processDueReminders,
+  checkForDueReminders,
 } from './utils/notificationUtils';
-import {
-  isPushNotificationSupported,
-  registerServiceWorker,
-  subscribeToPushNotifications,
-  unsubscribeFromPushNotifications,
-  isPushNotificationSubscribed,
-  testPushNotification,
-} from './utils/pushNotificationUtils';
 
 function App() {
   const { user, loading, signOut } = useAuth();
@@ -46,7 +38,6 @@ function App() {
   const [isEmailConfigOpen, setIsEmailConfigOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
-  const [pushNotificationsEnabled, setPushNotificationsEnabled] = useState(false);
   const [loadingReminders, setLoadingReminders] = useState(false);
   const [emailConfig, setEmailConfig] = useState<EmailConfigType>({
     smtpHost: 'smtp.gmail.com',
@@ -62,13 +53,6 @@ function App() {
     if (user) {
       const loadData = async () => {
         setLoadingReminders(true);
-        
-        // Register service worker and check push notification support
-        if (isPushNotificationSupported()) {
-          await registerServiceWorker();
-          const isSubscribed = await isPushNotificationSubscribed();
-          setPushNotificationsEnabled(isSubscribed);
-        }
         
         // Migrate localStorage data to Supabase if needed
         await migrateLocalStorageToSupabase(user.id);
@@ -121,44 +105,28 @@ function App() {
     };
   }, []);
 
-  // Check for due reminders every minute (fallback for browsers without push support)
+  // Check for due reminders every minute
   useEffect(() => {
     if (!user || !notificationsEnabled) return;
 
     const interval = setInterval(async () => {
-      // Process due reminders for push notifications
-      await processDueReminders(reminders);
-      
-      // Fallback: show browser notifications for browsers without push support
-      if (!pushNotificationsEnabled) {
-        const now = new Date();
-        const dueReminders = reminders.filter(reminder => {
-          if (reminder.notified || reminder.completed || !reminder.notification_enabled) {
-            return false;
-          }
-          
-          const reminderDateTime = new Date(`${reminder.date}T${reminder.time}`);
-          const timeDiff = reminderDateTime.getTime() - now.getTime();
-          
-          return timeDiff <= 60000 && timeDiff >= -60000;
-        });
+      const dueReminders = checkForDueReminders(reminders);
 
-        for (const reminder of dueReminders) {
-          showNotification(reminder);
-          // Mark as notified
-          const updatedReminder = { ...reminder, notified: true };
-          const result = await updateReminder(updatedReminder);
-          if (result) {
-            setReminders(prev => 
-              prev.map(r => r.id === reminder.id ? result : r)
-            );
-          }
+      for (const reminder of dueReminders) {
+        showNotification(reminder);
+        // Mark as notified
+        const updatedReminder = { ...reminder, notified: true };
+        const result = await updateReminder(updatedReminder);
+        if (result) {
+          setReminders(prev => 
+            prev.map(r => r.id === reminder.id ? result : r)
+          );
         }
       }
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [reminders, notificationsEnabled, pushNotificationsEnabled, user]);
+  }, [reminders, notificationsEnabled, user]);
 
   // Show loading screen while checking authentication
   if (loading) {
@@ -249,56 +217,8 @@ function App() {
     if (!notificationsEnabled) {
       const enabled = await requestNotificationPermission();
       setNotificationsEnabled(enabled);
-      
-      // If notifications are enabled and push is supported, try to enable push notifications
-      if (enabled && isPushNotificationSupported() && user) {
-        const pushEnabled = await subscribeToPushNotifications(user.id);
-        setPushNotificationsEnabled(pushEnabled);
-      }
     } else {
       setNotificationsEnabled(false);
-      
-      // Also disable push notifications
-      if (pushNotificationsEnabled && user) {
-        await unsubscribeFromPushNotifications(user.id);
-        setPushNotificationsEnabled(false);
-      }
-    }
-  };
-
-  const handleTestPushNotification = async () => {
-    if (!user) {
-      alert('Usuário não logado');
-      return;
-    }
-
-    if (!pushNotificationsEnabled) {
-      alert('Notificações push não estão ativadas. Ative primeiro as notificações.');
-      return;
-    }
-
-    let testReminderId = '';
-    
-    if (reminders.length > 0) {
-      // Use the first reminder for testing
-      testReminderId = reminders[0].id;
-    } else {
-      // Create a temporary test reminder ID
-      testReminderId = 'test-reminder-' + Date.now();
-    }
-
-    console.log('Enviando notificação de teste para reminder:', testReminderId);
-    
-    try {
-      const success = await testPushNotification(user.id, testReminderId);
-      if (success) {
-        alert('Notificação de teste enviada com sucesso! Verifique se recebeu a notificação.');
-      } else {
-        alert('Falha ao enviar notificação de teste. Verifique os logs do console para mais detalhes.');
-      }
-    } catch (error) {
-      console.error('Erro ao testar notificação push:', error);
-      alert('Erro ao testar notificação push. Verifique os logs do console.');
     }
   };
 
@@ -343,11 +263,6 @@ function App() {
               {/* User info */}
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 mr-4">
                 <span>Olá, {user.email}</span>
-                {pushNotificationsEnabled && (
-                  <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-full text-xs">
-                    Push ativo
-                  </span>
-                )}
               </div>
 
               {/* Theme toggle */}
@@ -372,9 +287,7 @@ function App() {
                 }`}
                 title={
                   notificationsEnabled 
-                    ? pushNotificationsEnabled 
-                      ? 'Notificações push ativas' 
-                      : 'Notificações básicas ativas'
+                    ? 'Notificações ativas'
                     : 'Ativar notificações'
                 }
               >
@@ -385,17 +298,6 @@ function App() {
                 )}
               </button>
 
-              {/* Test Push Notification Button */}
-              {pushNotificationsEnabled && (
-                <button
-                  onClick={handleTestPushNotification}
-                  className="p-2 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
-                  title="Testar Notificação Push"
-                >
-                  <Send className="h-5 w-5" />
-                </button>
-              )}
-              
               <button
                 onClick={() => setIsEmailConfigOpen(true)}
                 className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
