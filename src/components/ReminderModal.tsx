@@ -83,10 +83,10 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
       completed: editingReminder?.completed || false,
       notified: editingReminder?.notified || false,
       notification_enabled: notificationEnabled,
-      assigned_to_user_id: assignedToUserId,
+      assigned_to_user_id: assignedUserIds.length > 0 ? assignedUserIds[0] : null, // For backward compatibility
     };
 
-    onSave(reminderData);
+    onSave(reminderData, assignedUserIds);
     onClose();
   };
 
@@ -98,6 +98,16 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   if (!isOpen) return null;
 
   const availableProfiles = profiles.filter(profile => profile.id !== currentUserId);
+
+  const addAssignedUser = (userId: string) => {
+    if (!assignedUserIds.includes(userId)) {
+      setAssignedUserIds(prev => [...prev, userId]);
+    }
+  };
+
+  const removeAssignedUser = (userId: string) => {
+    setAssignedUserIds(prev => prev.filter(id => id !== userId));
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -193,22 +203,59 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
           <div>
             <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
               <Users className="h-4 w-4 mr-2" />
-              Atribuir para (opcional)
+              Compartilhar com usuários (opcional)
             </label>
+            
+            {/* Selected Users */}
+            {assignedUserIds.length > 0 && (
+              <div className="mb-3 space-y-2">
+                {assignedUserIds.map(userId => {
+                  const user = profiles.find(p => p.id === userId);
+                  if (!user) return null;
+                  
+                  return (
+                    <div key={userId} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <span className="text-sm text-gray-700 dark:text-gray-200">
+                          {user.display_name || user.email}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAssignedUser(userId)}
+                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                      >
+                        <UserMinus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            {/* Add User Dropdown */}
             <select
-              value={assignedToUserId || ''}
-              onChange={(e) => setAssignedToUserId(e.target.value || null)}
+              value=""
+              onChange={(e) => {
+                if (e.target.value) {
+                  addAssignedUser(e.target.value);
+                  e.target.value = ''; // Reset selection
+                }
+              }}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
-              <option value="">Apenas para mim</option>
-              {availableProfiles.map((profile) => (
-                <option key={profile.id} value={profile.id}>
-                  {profile.display_name || profile.email}
-                </option>
-              ))}
+              <option value="">+ Adicionar usuário</option>
+              {availableProfiles
+                .filter(profile => !assignedUserIds.includes(profile.id))
+                .map((profile) => (
+                  <option key={profile.id} value={profile.id}>
+                    {profile.display_name || profile.email}
+                  </option>
+                ))}
             </select>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Selecione um usuário para compartilhar este lembrete
+              Selecione usuários para compartilhar este lembrete com eles
             </p>
           </div>
 

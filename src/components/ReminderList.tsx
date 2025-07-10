@@ -60,7 +60,8 @@ const ReminderList: React.FC<ReminderListProps> = ({
         {sortedReminders.map((reminder) => {
           const isOverdue = !reminder.completed && isPast(reminder.date, reminder.time);
           const isOwner = reminder.owner_id === currentUserId;
-          const isAssigned = reminder.assigned_to_user_id === currentUserId;
+          const isAssigned = reminder.assigned_to_user_id === currentUserId || 
+                           (reminder.assigned_users && reminder.assigned_users.some(user => user.id === currentUserId));
           
           return (
             <div
@@ -101,9 +102,14 @@ const ReminderList: React.FC<ReminderListProps> = ({
 
                     {/* Assignment indicator */}
                     <div className="flex-shrink-0">
-                      {reminder.assigned_to_user_id ? (
+                      {(reminder.assigned_to_user_id || (reminder.assigned_users && reminder.assigned_users.length > 0)) ? (
                         <div className="flex items-center space-x-1">
                           <Users className="h-4 w-4 text-purple-500 dark:text-purple-400" title="Lembrete compartilhado" />
+                          {reminder.assigned_users && reminder.assigned_users.length > 1 && (
+                            <span className="text-xs text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-1.5 py-0.5 rounded-full">
+                              +{reminder.assigned_users.length}
+                            </span>
+                          )}
                           {!isOwner && (
                             <span className="text-xs text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-full">
                               Atribuído

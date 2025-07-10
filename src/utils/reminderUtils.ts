@@ -66,7 +66,10 @@ export const addReminder = async (reminder: Omit<Reminder, 'id' | 'created_at'>)
   return data;
 };
 
-export const updateReminder = async (reminder: Reminder): Promise<Reminder | null> => {
+export const updateReminder = async (
+  reminder: Reminder, 
+  assignedUserIds: string[] = []
+): Promise<Reminder | null> => {
   const { data, error } = await supabase
     .from('reminders')
     .update({
@@ -86,6 +89,31 @@ export const updateReminder = async (reminder: Reminder): Promise<Reminder | nul
   if (error) {
     console.error('Error updating reminder:', error);
     return null;
+  }
+
+  // Update assignments - remove old ones and add new ones
+  if (assignedUserIds.length >= 0) {
+    // Remove existing assignments
+    await supabase
+      .from('reminder_assignments')
+      .delete()
+      .eq('reminder_id', reminder.id);
+
+    // Add new assignments
+    if (assignedUserIds.length > 0) {
+      const assignments = assignedUserIds.map(userId => ({
+        reminder_id: reminder.id,
+        user_id: userId
+      }));
+
+      const { error: assignmentError } = await supabase
+        .from('reminder_assignments')
+        .insert(assignments);
+
+      if (assignmentError) {
+        console.error('Error updating reminder assignments:', assignmentError);
+      }
+    }
   }
 
   return data;

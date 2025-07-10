@@ -187,7 +187,10 @@ function App() {
     return <Auth />;
   }
 
-  const handleSaveReminder = async (reminderData: Omit<Reminder, 'id' | 'created_at' | 'owner_id'>) => {
+  const handleSaveReminder = async (
+    reminderData: Omit<Reminder, 'id' | 'created_at' | 'owner_id'>, 
+    assignedUserIds: string[] = []
+  ) => {
     if (!user) return;
 
     if (editingReminder) {
@@ -197,7 +200,7 @@ function App() {
         ...reminderData,
       };
       
-      const result = await updateReminder(updatedReminder);
+      const result = await updateReminder(updatedReminder, assignedUserIds);
       if (result) {
         setReminders(prev => prev.map(r => r.id === result.id ? result : r));
       }
@@ -208,7 +211,7 @@ function App() {
         owner_id: user.id,
       };
       
-      const result = await addReminder(newReminderData);
+      const result = await addReminder(newReminderData, assignedUserIds);
       if (result) {
         setReminders(prev => [...prev, result]);
       }
