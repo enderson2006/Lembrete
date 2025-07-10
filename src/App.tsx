@@ -5,6 +5,7 @@ import ReminderModal from './components/ReminderModal';
 import ReminderList from './components/ReminderList';
 import EmailConfig from './components/EmailConfig';
 import Auth from './components/Auth';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import { useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
 import { Reminder, EmailConfig as EmailConfigType, ViewMode, Profile } from './types/reminder';
@@ -98,11 +99,55 @@ function App() {
       handleToggleComplete(reminderId);
     };
 
+    const handleBackgroundCheck = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'CHECK_REMINDERS_BACKGROUND') {
+        console.log('🔄 Background reminder check requested');
+        // Force a reminder check
+        const dueReminders = checkForDueReminders(reminders);
+        for (const reminder of dueReminders) {
+          showNotification(reminder);
+          // Mark as notified
+          const updatedReminder = { ...reminder, notified: true };
+          updateReminder(updatedReminder).then(result => {
+            if (result) {
+              setReminders(prev => 
+                prev.map(r => r.id === reminder.id ? result : r)
+              );
+            }
+          });
+        }
+      }
+    };
+
     window.addEventListener('markReminderComplete', handleServiceWorkerMessage as EventListener);
+    navigator.serviceWorker?.addEventListener('message', handleBackgroundCheck);
 
     return () => {
       window.removeEventListener('markReminderComplete', handleServiceWorkerMessage as EventListener);
+      navigator.serviceWorker?.removeEventListener('message', handleBackgroundCheck);
     };
+  }, [reminders]);
+
+  // Keep service worker alive for background operation
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+
+    const keepServiceWorkerAlive = () => {
+      navigator.serviceWorker.ready.then(registration => {
+        if (registration.active) {
+          const channel = new MessageChannel();
+          registration.active.postMessage(
+            { type: 'KEEP_ALIVE' },
+            [channel.port2]
+          );
+        }
+      }).catch(console.error);
+    };
+
+    // Send keep-alive message every 20 seconds
+    const keepAliveInterval = setInterval(keepServiceWorkerAlive, 20000);
+
+    return () => clearInterval(keepAliveInterval);
   }, []);
 
   // Check for due reminders every minute
@@ -380,6 +425,9 @@ function App() {
         config={emailConfig}
         onSave={handleSaveEmailConfig}
       />
+
+      {/* PWA Install Prompt */}
+      <PWAInstallPrompt />
     </div>
   );
 }

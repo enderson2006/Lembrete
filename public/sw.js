@@ -1,10 +1,13 @@
 // Service Worker for handling push notifications
-const CACHE_NAME = 'lembrete-pro-v3';
+const CACHE_NAME = 'lembrete-pro-v4';
 const urlsToCache = [
   '/',
   '/vite.svg',
   '/manifest.json'
 ];
+
+// Keep service worker alive for background sync
+let keepAliveInterval;
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
@@ -42,10 +45,56 @@ self.addEventListener('activate', (event) => {
       );
     }).then(() => {
       console.log('✅ Service Worker activated successfully');
+      
+      // Start keep-alive mechanism for background operation
+      startKeepAlive();
+      
       return self.clients.claim();
     })
   );
 });
+
+// Keep service worker alive for background notifications
+function startKeepAlive() {
+  // Clear any existing interval
+  if (keepAliveInterval) {
+    clearInterval(keepAliveInterval);
+  }
+  
+  // Send a message to keep the service worker alive every 25 seconds
+  keepAliveInterval = setInterval(() => {
+    console.log('🔄 Service Worker keep-alive ping');
+    
+    // Check for due reminders in background
+    checkBackgroundReminders();
+  }, 25000); // 25 seconds to stay under 30s limit
+}
+
+// Background reminder checking
+async function checkBackgroundReminders() {
+  try {
+    // Get all clients (open tabs)
+    const clients = await self.clients.matchAll({
+      includeUncontrolled: true,
+      type: 'window'
+    });
+    
+    if (clients.length === 0) {
+      console.log('📱 No active clients, checking reminders in background...');
+      
+      // Post message to any available client to check reminders
+      // This will wake up the app if it's minimized
+      const allClients = await self.clients.matchAll();
+      if (allClients.length > 0) {
+        allClients[0].postMessage({
+          type: 'CHECK_REMINDERS_BACKGROUND'
+        });
+      }
+    }
+  } catch (error) {
+    console.error('❌ Error in background reminder check:', error);
+  }
+}
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
@@ -67,6 +116,16 @@ self.addEventListener('fetch', (event) => {
         }
       })
   );
+});
+
+// Listen for messages from the main app
+self.addEventListener('message', (event) => {
+  console.log('📨 Service Worker received message:', event.data);
+  
+  if (event.data && event.data.type === 'KEEP_ALIVE') {
+    // Respond to keep-alive ping from main app
+    event.ports[0].postMessage({ success: true });
+  }
 });
 
 // Notification click event - handle user interactions
