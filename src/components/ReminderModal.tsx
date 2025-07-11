@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, FileText, Bell, User, Users } from 'lucide-react';
+import { X, Calendar, Clock, FileText, Bell, User, Users, UserMinus } from 'lucide-react';
 import { Reminder, Profile } from '../types/reminder';
 import { formatDate, formatTime } from '../utils/reminderUtils';
 
 interface ReminderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (reminder: Omit<Reminder, 'id' | 'created_at' | 'owner_id'>) => void;
+  onSave: (reminder: Omit<Reminder, 'id' | 'created_at' | 'owner_id'>, assignedUserIds: string[]) => void;
   selectedDate: string;
   editingReminder?: Reminder | null;
   profiles: Profile[];
@@ -28,6 +28,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   const [time, setTime] = useState('09:00');
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [assignedToUserId, setAssignedToUserId] = useState<string | null>(null);
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -38,6 +39,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
       setTime(editingReminder.time);
       setNotificationEnabled(editingReminder.notification_enabled);
       setAssignedToUserId(editingReminder.assigned_to_user_id || null);
+      setAssignedUserIds(editingReminder.assigned_users?.map(user => user.id) || []);
     } else {
       setTitle('');
       setDescription('');
@@ -45,6 +47,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
       setTime('09:00');
       setNotificationEnabled(true);
       setAssignedToUserId(null);
+      setAssignedUserIds([]);
     }
     setErrors({});
   }, [editingReminder, selectedDate, isOpen]);
