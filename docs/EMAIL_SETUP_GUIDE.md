@@ -1,5 +1,13 @@
 # 📧 Guia de Configuração de Email
 
+## ⚠️ **STATUS ATUAL**
+
+**A funcionalidade de email está em desenvolvimento.** 
+
+**Por enquanto, use as notificações do navegador que funcionam perfeitamente!**
+
+---
+
 ## 🎯 Como Configurar Notificações por Email
 
 ### 📋 **Pré-requisitos**:

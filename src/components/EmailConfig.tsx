@@ -240,16 +240,30 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    // Test email functionality
-                    console.log('🧪 Testing email configuration...');
-                    // You can add a test email function here
+                    // Create a test reminder to send email
+                    const testReminder = {
+                      id: 'test-' + Date.now(),
+                      title: 'Teste de Email',
+                      description: 'Este é um email de teste do Lembrete Pro',
+                      date: new Date().toISOString().split('T')[0],
+                      time: new Date().toTimeString().split(' ')[0].slice(0, 5),
+                      completed: false,
+                      notified: false,
+                      notification_enabled: true,
+                      owner_id: 'test',
+                      created_at: new Date().toISOString()
+                    };
+                    
+                    // Test email sending
+                    console.log('🧪 Enviando email de teste...');
+                    alert('Funcionalidade de email em desenvolvimento. Por enquanto, use apenas as notificações do navegador que funcionam perfeitamente!');
                   }}
                   className="w-full px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors text-sm"
                 >
                   📧 Enviar Email de Teste
                 </button>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-                  Teste se as configurações estão funcionando
+                  Em desenvolvimento - Use as notificações do navegador
                 </p>
               </div>
             </>

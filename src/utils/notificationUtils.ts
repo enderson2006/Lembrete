@@ -70,20 +70,66 @@ export const sendEmailNotification = async (reminder: Reminder, emailConfig: Ema
   try {
     console.log('📧 Sending email notification for reminder:', reminder.title);
     
-    const { data, error } = await supabase.functions.invoke('send-email-notification', {
-      body: {
-        reminderId: reminder.id,
-        emailConfig: emailConfig
-      }
+    // For now, use a simple email service or simulate
+    // Since Supabase Edge Functions for email require additional setup
+    const emailData = {
+      to: emailConfig.recipientEmail,
+      from: emailConfig.senderEmail,
+      subject: `Lembrete: ${reminder.title}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <div style="background: #2563eb; color: white; padding: 20px; border-radius: 8px 8px 0 0;">
+            <h1>🔔 Lembrete Pro</h1>
+            <p>Você tem um lembrete programado!</p>
+          </div>
+          <div style="background: #f8fafc; padding: 20px; border-radius: 0 0 8px 8px;">
+            <div style="background: white; padding: 20px; border-radius: 8px;">
+              <h2>${reminder.title}</h2>
+              ${reminder.description ? `<p>${reminder.description}</p>` : ''}
+              <div style="color: #6b7280; font-size: 14px; margin-top: 10px;">
+                📅 Data: ${new Date(reminder.date).toLocaleDateString('pt-BR')}<br>
+                🕐 Horário: ${reminder.time}
+              </div>
+            </div>
+          </div>
+          <div style="text-align: center; margin-top: 20px; color: #6b7280; font-size: 12px;">
+            <p>Este email foi enviado automaticamente pelo Lembrete Pro</p>
+          </div>
+        </div>
+      `
+    };
+
+    // Use EmailJS or similar service for actual email sending
+    // For now, we'll use a simple fetch to a email service
+    const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        service_id: 'gmail', // You'll need to configure this
+        template_id: 'template_reminder',
+        user_id: 'your_emailjs_user_id',
+        template_params: {
+          to_email: emailConfig.recipientEmail,
+          from_email: emailConfig.senderEmail,
+          subject: emailData.subject,
+          message: emailData.html,
+          reminder_title: reminder.title,
+          reminder_description: reminder.description || '',
+          reminder_date: new Date(reminder.date).toLocaleDateString('pt-BR'),
+          reminder_time: reminder.time
+        }
+      })
     });
 
-    if (error) {
-      console.error('❌ Failed to send email notification:', error);
+    if (response.ok) {
+      console.log('✅ Email notification sent successfully');
+      return true;
+    } else {
+      console.error('❌ Failed to send email:', response.statusText);
       return false;
     }
-
-    console.log('✅ Email notification sent successfully:', data);
-    return true;
 
   } catch (error) {
     console.error('❌ Error sending email notification:', error);
