@@ -1,4 +1,6 @@
 import { Reminder } from '../types/reminder';
+import { EmailConfig } from '../types/reminder';
+import { supabase } from '../lib/supabase';
 
 export const requestNotificationPermission = async (): Promise<boolean> => {
   if (!('Notification' in window)) {
@@ -57,4 +59,34 @@ export const checkForDueReminders = (reminders: Reminder[]): Reminder[] => {
   });
 
   return dueReminders;
+};
+
+export const sendEmailNotification = async (reminder: Reminder, emailConfig: EmailConfig): Promise<boolean> => {
+  if (!emailConfig.enabled) {
+    console.log('📧 Email notifications are disabled');
+    return false;
+  }
+
+  try {
+    console.log('📧 Sending email notification for reminder:', reminder.title);
+    
+    const { data, error } = await supabase.functions.invoke('send-email-notification', {
+      body: {
+        reminderId: reminder.id,
+        emailConfig: emailConfig
+      }
+    });
+
+    if (error) {
+      console.error('❌ Failed to send email notification:', error);
+      return false;
+    }
+
+    console.log('✅ Email notification sent successfully:', data);
+    return true;
+
+  } catch (error) {
+    console.error('❌ Error sending email notification:', error);
+    return false;
+  }
 };

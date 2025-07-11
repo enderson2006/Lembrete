@@ -203,6 +203,17 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Para Gmail, use uma senha de app em vez da senha normal
                 </p>
+                <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    💡 <strong>Dica para Gmail:</strong>
+                  </p>
+                  <ol className="text-xs text-blue-600 dark:text-blue-400 mt-1 ml-4 list-decimal">
+                    <li>Ative a verificação em 2 etapas</li>
+                    <li>Vá em "Senhas de app" nas configurações</li>
+                    <li>Gere uma senha específica para este app</li>
+                    <li>Use essa senha aqui (não sua senha normal)</li>
+                  </ol>
+                </div>
               </div>
 
               {/* Recipient Email */}
@@ -222,6 +233,24 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
                 {errors.recipientEmail && (
                   <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.recipientEmail}</p>
                 )}
+              </div>
+              
+              {/* Test Email Button */}
+              <div className="pt-4 border-t dark:border-gray-600">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Test email functionality
+                    console.log('🧪 Testing email configuration...');
+                    // You can add a test email function here
+                  }}
+                  className="w-full px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors text-sm"
+                >
+                  📧 Enviar Email de Teste
+                </button>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                  Teste se as configurações estão funcionando
+                </p>
               </div>
             </>
           )}

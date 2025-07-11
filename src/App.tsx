@@ -25,6 +25,7 @@ import {
   requestNotificationPermission,
   showNotification,
   checkForDueReminders,
+  sendEmailNotification,
 } from './utils/notificationUtils';
 
 function App() {
@@ -159,6 +160,12 @@ function App() {
 
       for (const reminder of dueReminders) {
         showNotification(reminder);
+        
+        // Send email notification if enabled
+        if (emailConfig.enabled) {
+          await sendEmailNotification(reminder, emailConfig);
+        }
+        
         // Mark as notified
         const updatedReminder = { ...reminder, notified: true };
         const result = await updateReminder(updatedReminder);
@@ -171,7 +178,7 @@ function App() {
     }, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [reminders, notificationsEnabled, user]);
+  }, [reminders, notificationsEnabled, user, emailConfig]);
 
   // Show loading screen while checking authentication
   if (loading) {
