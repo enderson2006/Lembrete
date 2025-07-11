@@ -304,6 +304,13 @@ function App() {
                 <span className="bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-3 py-1 rounded-full transition-colors">
                   {pendingReminders} pendentes
                 </span>
+                {/* PWA Status Indicator */}
+                {window.matchMedia && window.matchMedia('(display-mode: standalone)').matches && (
+                  <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full transition-colors flex items-center space-x-1">
+                    <span>📱</span>
+                    <span>App Mode</span>
+                  </span>
+                )}
               </div>
             </div>
             

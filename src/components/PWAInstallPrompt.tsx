@@ -94,17 +94,22 @@ const PWAInstallPrompt: React.FC = () => {
           <h3 className="text-sm font-medium text-gray-900 dark:text-white">
             Instalar Lembrete Pro
           </h3>
-          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">
-            Instale o app para receber notificações mesmo quando o navegador estiver minimizado!
-          </p>
+          <div className="text-xs text-gray-600 dark:text-gray-300 mt-1">
+            <p className="font-medium text-blue-600 dark:text-blue-400 mb-1">
+              🚀 Funciona em segundo plano!
+            </p>
+            <p>
+              Instale para receber notificações mesmo com o app minimizado
+            </p>
+          </div>
           
           <div className="flex space-x-2 mt-3">
             <button
               onClick={handleInstallClick}
-              className="flex items-center space-x-1 bg-blue-600 dark:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+              className="flex items-center space-x-1 bg-green-600 dark:bg-green-700 text-white px-3 py-1.5 rounded text-xs font-medium hover:bg-green-700 dark:hover:bg-green-600 transition-colors shadow-sm"
             >
               <Download className="w-3 h-3" />
-              <span>Instalar</span>
+              <span>Instalar App</span>
             </button>
             
             <button
