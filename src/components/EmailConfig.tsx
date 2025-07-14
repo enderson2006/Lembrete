@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Mail, Save, Eye, EyeOff, Send, CheckCircle, AlertCircle } from 'lucide-react';
+import { Settings, Mail, Save, Eye, EyeOff, Send, CheckCircle, AlertCircle, HelpCircle, ExternalLink } from 'lucide-react';
 import { EmailConfig as EmailConfigType } from '../types/reminder';
-import { sendTestEmail } from '../utils/emailService';
+import { sendTestEmail, diagnoseEmailSystem } from '../utils/emailService';
 
 interface EmailConfigProps {
   isOpen: boolean;
@@ -28,11 +28,15 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
     success: null,
     message: ''
   });
+  const [showHelp, setShowHelp] = useState(false);
+  const [diagnosis, setDiagnosis] = useState<{ status: string; details: string[] } | null>(null);
 
   useEffect(() => {
     setFormData(config);
     setErrors({});
     setTestEmailStatus({ loading: false, success: null, message: '' });
+    setShowHelp(false);
+    setDiagnosis(null);
   }, [config, isOpen]);
 
   const validateForm = () => {
@@ -110,11 +114,31 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
       setTestEmailStatus({
         loading: false,
         success: false,
-        message: `❌ Erro inesperado: ${error.message}`
+        message: `❌ Erro inesperado: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
       });
     }
   };
   if (!isOpen) return null;
+  const handleDiagnosis = async () => {
+    setTestEmailStatus({ loading: true, success: null, message: 'Executando diagnóstico...' });
+    
+    try {
+      const result = await diagnoseEmailSystem();
+      setDiagnosis(result);
+      setTestEmailStatus({
+        loading: false,
+        success: result.status === 'ok',
+        message: result.status === 'ok' ? '✅ Sistema funcionando' : '⚠️ Problemas detectados'
+      });
+    } catch (error) {
+      setTestEmailStatus({
+        loading: false,
+        success: false,
+        message: `❌ Erro no diagnóstico: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      });
+    }
+  };
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -137,6 +161,44 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          {/* Help Section */}
+          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 transition-colors">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <HelpCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <span className="font-medium text-blue-800 dark:text-blue-200">Como configurar email</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowHelp(!showHelp)}
+                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+              >
+                {showHelp ? 'Ocultar' : 'Mostrar'}
+              </button>
+            </div>
+            
+            {showHelp && (
+              <div className="mt-3 text-sm text-blue-700 dark:text-blue-300 space-y-2">
+                <div className="font-medium">📧 Opção 1 - EmailJS (Recomendado):</div>
+                <ol className="list-decimal list-inside space-y-1 ml-4">
+                  <li>Acesse <a href="https://www.emailjs.com/" target="_blank" rel="noopener noreferrer" className="underline inline-flex items-center">emailjs.com <ExternalLink className="h-3 w-3 ml-1" /></a></li>
+                  <li>Crie conta gratuita</li>
+                  <li>Configure Gmail como serviço</li>
+                  <li>Crie template com ID: <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">template_lembrete</code></li>
+                  <li>Use sua chave pública como "senha" aqui</li>
+                </ol>
+                
+                <div className="font-medium mt-3">🔧 Configuração aqui:</div>
+                <ul className="list-disc list-inside space-y-1 ml-4">
+                  <li><strong>Servidor SMTP:</strong> <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">emailjs</code></li>
+                  <li><strong>Porta:</strong> <code className="bg-blue-100 dark:bg-blue-800 px-1 rounded">587</code></li>
+                  <li><strong>Email remetente:</strong> Seu Gmail</li>
+                  <li><strong>Senha:</strong> Sua chave pública do EmailJS</li>
+                  <li><strong>Email destinatário:</strong> Onde receber lembretes</li>
+                </ul>
+              </div>
+            )}
+          </div>
           {/* Enable Email */}
           <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-colors">
             <div>
@@ -276,6 +338,18 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
               
               {/* Test Email Button */}
               <div className="pt-4 border-t dark:border-gray-600">
+                {/* Diagnosis Results */}
+                {diagnosis && (
+                  <div className="mb-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
+                    <h4 className="font-medium text-gray-900 dark:text-white mb-2">🔍 Diagnóstico do Sistema:</h4>
+                    <div className="space-y-1 text-sm">
+                      {diagnosis.details.map((detail, index) => (
+                        <div key={index} className="text-gray-700 dark:text-gray-300">{detail}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Test Email Status */}
                 {testEmailStatus.message && (
                   <div className={`mb-4 p-3 rounded-lg flex items-center space-x-2 ${
@@ -298,26 +372,48 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={handleTestEmail}
-                  disabled={testEmailStatus.loading || !formData.enabled}
-                  className="w-full px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                >
-                  {testEmailStatus.loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Enviando...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4" />
-                      <span>📧 Enviar Email de Teste</span>
-                    </>
-                  )}
-                </button>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={handleTestEmail}
+                    disabled={testEmailStatus.loading || !formData.enabled}
+                    className="w-full px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {testEmailStatus.loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Enviando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4" />
+                        <span>📧 Enviar Email de Teste</span>
+                      </>
+                    )}
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={handleDiagnosis}
+                    disabled={testEmailStatus.loading}
+                    className="w-full px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {testEmailStatus.loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Diagnosticando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <HelpCircle className="h-4 w-4" />
+                        <span>🔍 Diagnosticar Sistema</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-                  Teste suas configurações antes de salvar
+                  Use o diagnóstico se o teste falhar
                 </p>
               </div>
             </>

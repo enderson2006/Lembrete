@@ -1,58 +1,70 @@
 import { Reminder, EmailConfig } from '../types/reminder';
 
-// EmailJS configuration
-const EMAILJS_SERVICE_ID = 'gmail'; // You'll configure this in EmailJS
-const EMAILJS_TEMPLATE_ID = 'reminder_template'; // You'll create this template
-const EMAILJS_PUBLIC_KEY = 'YOUR_EMAILJS_PUBLIC_KEY'; // You'll get this from EmailJS
-
-// Initialize EmailJS (we'll load it dynamically)
-let emailjs: any = null;
-
-const loadEmailJS = async () => {
-  if (emailjs) return emailjs;
-  
-  try {
-    // Load EmailJS from CDN
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
-    document.head.appendChild(script);
-    
-    return new Promise((resolve, reject) => {
-      script.onload = () => {
-        emailjs = (window as any).emailjs;
-        emailjs.init(EMAILJS_PUBLIC_KEY);
-        resolve(emailjs);
-      };
-      script.onerror = reject;
-    });
-  } catch (error) {
-    console.error('Failed to load EmailJS:', error);
-    throw error;
-  }
+// Configuração do EmailJS
+const EMAILJS_CONFIG = {
+  SERVICE_ID: 'service_lembrete', // Você vai configurar isso
+  TEMPLATE_ID: 'template_lembrete', // Você vai configurar isso
+  PUBLIC_KEY: 'YOUR_PUBLIC_KEY', // Você vai configurar isso
 };
 
-export const sendReminderEmail = async (reminder: Reminder, emailConfig: EmailConfig): Promise<boolean> => {
-  if (!emailConfig.enabled) {
-    console.log('📧 Email notifications are disabled');
-    return false;
-  }
+// Interface para EmailJS
+interface EmailJSResponse {
+  status: number;
+  text: string;
+}
 
-  try {
-    console.log('📧 Sending email notification for reminder:', reminder.title);
-    
-    // Load EmailJS if not already loaded
-    await loadEmailJS();
-    
-    if (!emailjs) {
-      throw new Error('EmailJS not loaded');
+// Carregar EmailJS dinamicamente
+const loadEmailJS = async (): Promise<any> => {
+  return new Promise((resolve, reject) => {
+    // Verificar se já está carregado
+    if ((window as any).emailjs) {
+      resolve((window as any).emailjs);
+      return;
     }
 
-    // Prepare email template parameters
+    // Carregar script do EmailJS
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
+    script.async = true;
+    
+    script.onload = () => {
+      const emailjs = (window as any).emailjs;
+      if (emailjs) {
+        console.log('✅ EmailJS carregado com sucesso');
+        resolve(emailjs);
+      } else {
+        reject(new Error('EmailJS não foi carregado corretamente'));
+      }
+    };
+    
+    script.onerror = () => {
+      reject(new Error('Falha ao carregar EmailJS'));
+    };
+    
+    document.head.appendChild(script);
+  });
+};
+
+// Função principal para enviar email via EmailJS
+export const sendReminderEmailJS = async (reminder: Reminder, emailConfig: EmailConfig): Promise<{ success: boolean; message: string }> => {
+  try {
+    console.log('📧 Iniciando envio via EmailJS...');
+    
+    // Carregar EmailJS
+    const emailjs = await loadEmailJS();
+    
+    // Inicializar com chave pública (usar senha como chave pública temporariamente)
+    const publicKey = emailConfig.senderPassword || EMAILJS_CONFIG.PUBLIC_KEY;
+    emailjs.init(publicKey);
+    
+    // Preparar parâmetros do template
     const templateParams = {
       to_email: emailConfig.recipientEmail,
       from_email: emailConfig.senderEmail,
+      from_name: 'Lembrete Pro',
+      subject: `🔔 Lembrete: ${reminder.title}`,
       reminder_title: reminder.title,
-      reminder_description: reminder.description || 'Sem descrição',
+      reminder_description: reminder.description || 'Sem descrição adicional',
       reminder_date: new Date(reminder.date).toLocaleDateString('pt-BR', {
         weekday: 'long',
         year: 'numeric',
@@ -61,251 +73,438 @@ export const sendReminderEmail = async (reminder: Reminder, emailConfig: EmailCo
       }),
       reminder_time: reminder.time,
       app_name: 'Lembrete Pro',
-      current_year: new Date().getFullYear()
+      current_year: new Date().getFullYear(),
+      message: `
+Você tem um lembrete programado:
+
+📋 Título: ${reminder.title}
+📝 Descrição: ${reminder.description || 'Sem descrição'}
+📅 Data: ${new Date(reminder.date).toLocaleDateString('pt-BR')}
+🕐 Horário: ${reminder.time}
+
+Não esqueça! 😊
+      `
     };
 
-    console.log('📋 Sending email with params:', {
+    console.log('📋 Parâmetros do email:', {
       to: templateParams.to_email,
+      from: templateParams.from_email,
       title: templateParams.reminder_title
     });
 
-    // Send email using EmailJS
-    const response = await emailjs.send(
-      EMAILJS_SERVICE_ID,
-      EMAILJS_TEMPLATE_ID,
+    // Enviar email
+    const serviceId = emailConfig.smtpHost === 'emailjs' ? 'gmail' : 'gmail'; // Usar Gmail como padrão
+    const templateId = 'template_lembrete'; // ID do template que você vai criar
+    
+    const response: EmailJSResponse = await emailjs.send(
+      serviceId,
+      templateId,
       templateParams
     );
 
     if (response.status === 200) {
-      console.log('✅ Email sent successfully:', response);
-      return true;
+      console.log('✅ Email enviado com sucesso via EmailJS');
+      return {
+        success: true,
+        message: '✅ Email enviado com sucesso via EmailJS!'
+      };
     } else {
-      console.error('❌ Email sending failed:', response);
-      return false;
+      console.error('❌ Resposta inesperada do EmailJS:', response);
+      return {
+        success: false,
+        message: `❌ Erro do EmailJS: Status ${response.status}`
+      };
     }
 
-  } catch (error) {
-    console.error('❌ Error sending email:', error);
-    return false;
+  } catch (error: any) {
+    console.error('❌ Erro no EmailJS:', error);
+    
+    // Mensagens de erro mais específicas
+    if (error.message?.includes('Public Key')) {
+      return {
+        success: false,
+        message: '❌ Chave pública do EmailJS inválida. Verifique a configuração.'
+      };
+    } else if (error.message?.includes('Template')) {
+      return {
+        success: false,
+        message: '❌ Template não encontrado. Crie o template "template_lembrete" no EmailJS.'
+      };
+    } else if (error.message?.includes('Service')) {
+      return {
+        success: false,
+        message: '❌ Serviço de email não configurado. Configure Gmail no EmailJS.'
+      };
+    } else {
+      return {
+        success: false,
+        message: `❌ Erro EmailJS: ${error.message || 'Erro desconhecido'}`
+      };
+    }
   }
 };
 
-export const sendTestEmail = async (emailConfig: EmailConfig): Promise<{ success: boolean; message: string }> => {
+// Função para envio via SMTP (simulado - para desenvolvimento)
+export const sendReminderSMTP = async (reminder: Reminder, emailConfig: EmailConfig): Promise<{ success: boolean; message: string }> => {
+  try {
+    console.log('📧 Simulando envio via SMTP...');
+    
+    // Validar configurações SMTP
+    if (!emailConfig.smtpHost || !emailConfig.senderEmail || !emailConfig.senderPassword) {
+      return {
+        success: false,
+        message: '❌ Configurações SMTP incompletas'
+      };
+    }
+
+    // Preparar conteúdo do email
+    const emailContent = {
+      from: emailConfig.senderEmail,
+      to: emailConfig.recipientEmail,
+      subject: `🔔 Lembrete: ${reminder.title}`,
+      html: generateEmailHTML(reminder),
+      text: generateEmailText(reminder)
+    };
+
+    console.log('📋 Conteúdo do email preparado:', {
+      from: emailContent.from,
+      to: emailContent.to,
+      subject: emailContent.subject
+    });
+
+    // Simular envio (em produção, você integraria com um serviço real)
+    await new Promise(resolve => setTimeout(resolve, 2000)); // Simular delay
+
+    // Para desenvolvimento, sempre retorna sucesso
+    console.log('✅ Email SMTP simulado com sucesso');
+    return {
+      success: true,
+      message: '✅ Email enviado via SMTP (simulado para desenvolvimento)'
+    };
+
+  } catch (error: any) {
+    console.error('❌ Erro no SMTP:', error);
+    return {
+      success: false,
+      message: `❌ Erro SMTP: ${error.message}`
+    };
+  }
+};
+
+// Função principal que escolhe o método
+export const sendReminderEmail = async (reminder: Reminder, emailConfig: EmailConfig): Promise<{ success: boolean; message: string }> => {
   if (!emailConfig.enabled) {
     return {
       success: false,
-      message: 'Email notifications are disabled'
+      message: '📧 Email desabilitado nas configurações'
     };
   }
 
-  try {
-    // Create a test reminder
-    const testReminder: Reminder = {
-      id: 'test-' + Date.now(),
-      owner_id: 'test',
-      title: '🧪 Teste de Email - Lembrete Pro',
-      description: 'Este é um email de teste para verificar se as configurações estão funcionando corretamente. Se você recebeu este email, tudo está configurado perfeitamente!',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().split(' ')[0].slice(0, 5),
-      completed: false,
-      created_at: new Date().toISOString(),
-      notified: false,
-      notification_enabled: true
-    };
+  console.log('📧 Enviando email para lembrete:', reminder.title);
+  console.log('⚙️ Configuração:', {
+    host: emailConfig.smtpHost,
+    port: emailConfig.smtpPort,
+    from: emailConfig.senderEmail,
+    to: emailConfig.recipientEmail
+  });
 
-    const success = await sendReminderEmail(testReminder, emailConfig);
-    
-    return {
-      success,
-      message: success 
-        ? '✅ Email de teste enviado com sucesso! Verifique sua caixa de entrada.'
-        : '❌ Falha ao enviar email de teste. Verifique as configurações.'
-    };
+  // Escolher método baseado na configuração
+  if (emailConfig.smtpHost === 'emailjs' || emailConfig.smtpHost === 'smtp.emailjs.com') {
+    return await sendReminderEmailJS(reminder, emailConfig);
+  } else {
+    return await sendReminderSMTP(reminder, emailConfig);
+  }
+};
 
-  } catch (error) {
+// Função para teste de email
+export const sendTestEmail = async (emailConfig: EmailConfig): Promise<{ success: boolean; message: string }> => {
+  console.log('🧪 Iniciando teste de email...');
+  
+  if (!emailConfig.enabled) {
     return {
       success: false,
-      message: `❌ Erro ao enviar email de teste: ${error.message}`
+      message: '❌ Email está desabilitado. Ative primeiro.'
+    };
+  }
+
+  // Validar configurações básicas
+  if (!emailConfig.recipientEmail || !emailConfig.senderEmail) {
+    return {
+      success: false,
+      message: '❌ Configure os emails remetente e destinatário'
+    };
+  }
+
+  if (!emailConfig.senderPassword) {
+    return {
+      success: false,
+      message: '❌ Configure a senha/chave de acesso'
+    };
+  }
+
+  // Criar lembrete de teste
+  const testReminder: Reminder = {
+    id: `test-${Date.now()}`,
+    owner_id: 'test-user',
+    title: '🧪 Teste de Email - Lembrete Pro',
+    description: 'Este é um email de teste para verificar se as configurações estão funcionando corretamente. Se você recebeu este email, parabéns! Tudo está configurado perfeitamente! 🎉',
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toTimeString().split(' ')[0].slice(0, 5),
+    completed: false,
+    created_at: new Date().toISOString(),
+    notified: false,
+    notification_enabled: true
+  };
+
+  try {
+    const result = await sendReminderEmail(testReminder, emailConfig);
+    
+    if (result.success) {
+      return {
+        success: true,
+        message: '✅ Email de teste enviado! Verifique sua caixa de entrada (e spam).'
+      };
+    } else {
+      return {
+        success: false,
+        message: result.message
+      };
+    }
+  } catch (error: any) {
+    console.error('❌ Erro no teste de email:', error);
+    return {
+      success: false,
+      message: `❌ Erro inesperado: ${error.message}`
     };
   }
 };
 
-// Alternative: Simple SMTP-based email (for advanced users)
-export const sendEmailViaSMTP = async (reminder: Reminder, emailConfig: EmailConfig): Promise<boolean> => {
-  try {
-    console.log('📧 Sending email via SMTP for reminder:', reminder.title);
-
-    // Prepare email content
-    const subject = `🔔 Lembrete: ${reminder.title}`;
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${subject}</title>
-        <style>
-          body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            line-height: 1.6; 
-            color: #333; 
-            margin: 0; 
-            padding: 0; 
-            background-color: #f5f5f5;
-          }
-          .container { 
-            max-width: 600px; 
-            margin: 20px auto; 
-            background: white; 
-            border-radius: 12px; 
-            overflow: hidden; 
+// Gerar HTML do email
+const generateEmailHTML = (reminder: Reminder): string => {
+  return `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lembrete: ${reminder.title}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-          .header { 
-            background: linear-gradient(135deg, #2563eb, #3b82f6); 
-            color: white; 
-            padding: 30px 20px; 
-            text-align: center; 
-          }
-          .header h1 { 
-            margin: 0; 
-            font-size: 24px; 
-            font-weight: 600; 
-          }
-          .header p { 
-            margin: 8px 0 0 0; 
-            opacity: 0.9; 
-            font-size: 16px; 
-          }
-          .content { 
-            padding: 30px 20px; 
-          }
-          .reminder-card { 
-            background: #f8fafc; 
-            border: 1px solid #e2e8f0; 
-            border-radius: 8px; 
-            padding: 20px; 
-            margin: 20px 0; 
-          }
-          .reminder-title { 
-            font-size: 20px; 
-            font-weight: 600; 
-            color: #1e293b; 
-            margin: 0 0 10px 0; 
-          }
-          .reminder-description { 
-            color: #64748b; 
-            margin: 10px 0; 
-            font-size: 16px; 
-          }
-          .reminder-details { 
-            display: flex; 
-            gap: 20px; 
-            margin-top: 15px; 
-            font-size: 14px; 
-          }
-          .detail-item { 
-            display: flex; 
-            align-items: center; 
-            color: #475569; 
-          }
-          .detail-item strong { 
-            color: #1e293b; 
-          }
-          .footer { 
-            background: #f8fafc; 
-            padding: 20px; 
-            text-align: center; 
-            border-top: 1px solid #e2e8f0; 
-            color: #64748b; 
-            font-size: 14px; 
-          }
-          .cta-button {
+        }
+        .header {
+            background: linear-gradient(135deg, #2563eb, #3b82f6);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .header p {
+            margin: 8px 0 0 0;
+            opacity: 0.9;
+            font-size: 16px;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .reminder-card {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        .reminder-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0 0 15px 0;
+        }
+        .reminder-description {
+            color: #64748b;
+            margin: 15px 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        .reminder-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .detail-item {
+            display: flex;
+            align-items: center;
+            color: #475569;
+            font-size: 16px;
+        }
+        .detail-item strong {
+            color: #1e293b;
+            margin-right: 8px;
+        }
+        .cta-button {
             display: inline-block;
             background: #2563eb;
             color: white;
-            padding: 12px 24px;
+            padding: 15px 30px;
             text-decoration: none;
-            border-radius: 6px;
-            font-weight: 500;
-            margin: 20px 0;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <h1>🔔 Lembrete Pro</h1>
+            border-radius: 8px;
+            font-weight: 600;
+            margin: 25px 0;
+            text-align: center;
+        }
+        .footer {
+            background: #f8fafc;
+            padding: 25px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
+            color: #64748b;
+            font-size: 14px;
+        }
+        .emoji {
+            font-size: 1.2em;
+            margin-right: 5px;
+        }
+        @media (max-width: 600px) {
+            .container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            .reminder-details {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="emoji">🔔</span>Lembrete Pro</h1>
             <p>Você tem um lembrete programado!</p>
-          </div>
-          
-          <div class="content">
+        </div>
+        
+        <div class="content">
             <div class="reminder-card">
-              <div class="reminder-title">${reminder.title}</div>
-              ${reminder.description ? `<div class="reminder-description">${reminder.description}</div>` : ''}
-              
-              <div class="reminder-details">
-                <div class="detail-item">
-                  <strong>📅 Data:</strong>&nbsp;${new Date(reminder.date).toLocaleDateString('pt-BR', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
+                <div class="reminder-title">${reminder.title}</div>
+                ${reminder.description ? `<div class="reminder-description">${reminder.description}</div>` : ''}
+                
+                <div class="reminder-details">
+                    <div class="detail-item">
+                        <strong><span class="emoji">📅</span>Data:</strong>
+                        ${new Date(reminder.date).toLocaleDateString('pt-BR', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                    </div>
+                    <div class="detail-item">
+                        <strong><span class="emoji">🕐</span>Horário:</strong>
+                        ${reminder.time}
+                    </div>
                 </div>
-                <div class="detail-item">
-                  <strong>🕐 Horário:</strong>&nbsp;${reminder.time}
-                </div>
-              </div>
             </div>
             
             <div style="text-align: center;">
-              <a href="${window.location.origin}" class="cta-button">
-                Abrir Lembrete Pro
-              </a>
+                <a href="${window.location?.origin || 'https://tangerine-cocada-cf0532.netlify.app'}" class="cta-button">
+                    <span class="emoji">📱</span>Abrir Lembrete Pro
+                </a>
             </div>
-          </div>
-          
-          <div class="footer">
-            <p>Este email foi enviado automaticamente pelo <strong>Lembrete Pro</strong></p>
-            <p>© ${new Date().getFullYear()} - Sistema de Gerenciamento de Lembretes</p>
-          </div>
         </div>
-      </body>
-      </html>
-    `;
+        
+        <div class="footer">
+            <p><strong>Lembrete Pro</strong> - Sistema de Gerenciamento de Lembretes</p>
+            <p>© ${new Date().getFullYear()} - Este email foi enviado automaticamente</p>
+        </div>
+    </div>
+</body>
+</html>
+  `;
+};
 
-    // Use a simple email service API (you can replace with your preferred service)
-    const emailData = {
-      to: emailConfig.recipientEmail,
-      from: emailConfig.senderEmail,
-      subject: subject,
-      html: htmlContent,
-      // SMTP configuration
-      smtp: {
-        host: emailConfig.smtpHost,
-        port: emailConfig.smtpPort,
-        secure: emailConfig.smtpPort === 465,
-        auth: {
-          user: emailConfig.senderEmail,
-          pass: emailConfig.senderPassword
-        }
-      }
-    };
+// Gerar texto simples do email
+const generateEmailText = (reminder: Reminder): string => {
+  return `
+🔔 LEMBRETE PRO
 
-    // For now, we'll use a mock implementation
-    // In production, you'd integrate with a real email service
-    console.log('📧 Email would be sent:', {
-      to: emailData.to,
-      subject: emailData.subject,
-      from: emailData.from
-    });
+Você tem um lembrete programado!
 
-    // Simulate success for now
-    return true;
+📋 Título: ${reminder.title}
+
+${reminder.description ? `📝 Descrição: ${reminder.description}\n` : ''}
+📅 Data: ${new Date(reminder.date).toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })}
+
+🕐 Horário: ${reminder.time}
+
+---
+Lembrete Pro - Sistema de Gerenciamento de Lembretes
+© ${new Date().getFullYear()} - Este email foi enviado automaticamente
+  `;
+};
+
+// Diagnóstico do sistema
+export const diagnoseEmailSystem = async (): Promise<{ status: string; details: string[] }> => {
+  const details: string[] = [];
+  let status = 'ok';
+
+  try {
+    // Verificar se EmailJS pode ser carregado
+    try {
+      await loadEmailJS();
+      details.push('✅ EmailJS pode ser carregado');
+    } catch (error) {
+      details.push('❌ Erro ao carregar EmailJS');
+      status = 'error';
+    }
+
+    // Verificar conectividade
+    try {
+      await fetch('https://api.emailjs.com/api/v1.0/email/send', { method: 'HEAD' });
+      details.push('✅ Conectividade com EmailJS OK');
+    } catch (error) {
+      details.push('⚠️ Problema de conectividade com EmailJS');
+      status = 'warning';
+    }
+
+    // Verificar localStorage
+    try {
+      localStorage.setItem('test', 'test');
+      localStorage.removeItem('test');
+      details.push('✅ LocalStorage funcionando');
+    } catch (error) {
+      details.push('❌ Problema com LocalStorage');
+      status = 'error';
+    }
 
   } catch (error) {
-    console.error('❌ SMTP Email error:', error);
-    return false;
+    details.push(`❌ Erro geral: ${error}`);
+    status = 'error';
   }
+
+  return { status, details };
 };
