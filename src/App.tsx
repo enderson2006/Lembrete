@@ -161,9 +161,16 @@ function App() {
       for (const reminder of dueReminders) {
         showNotification(reminder);
         
-        // Email notifications are in development
-        // For now, browser notifications work perfectly
-        console.log('📧 Email notification would be sent for:', reminder.title);
+        // Send email notification if enabled
+        if (emailConfig.enabled) {
+          console.log('📧 Sending email notification for:', reminder.title);
+          const emailSent = await sendEmailNotification(reminder, emailConfig);
+          if (emailSent) {
+            console.log('✅ Email notification sent successfully');
+          } else {
+            console.log('❌ Failed to send email notification');
+          }
+        }
         
         // Mark as notified
         const updatedReminder = { ...reminder, notified: true };

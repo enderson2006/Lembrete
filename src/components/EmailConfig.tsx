@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Mail, Save, Eye, EyeOff } from 'lucide-react';
+import { Settings, Mail, Save, Eye, EyeOff, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { EmailConfig as EmailConfigType } from '../types/reminder';
+import { sendTestEmail } from '../utils/emailService';
 
 interface EmailConfigProps {
   isOpen: boolean;
@@ -18,10 +19,20 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
   const [formData, setFormData] = useState<EmailConfigType>(config);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [testEmailStatus, setTestEmailStatus] = useState<{
+    loading: boolean;
+    success: boolean | null;
+    message: string;
+  }>({
+    loading: false,
+    success: null,
+    message: ''
+  });
 
   useEffect(() => {
     setFormData(config);
     setErrors({});
+    setTestEmailStatus({ loading: false, success: null, message: '' });
   }, [config, isOpen]);
 
   const validateForm = () => {
@@ -75,6 +86,34 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
     }));
   };
 
+  const handleTestEmail = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setTestEmailStatus({ loading: true, success: null, message: 'Enviando email de teste...' });
+
+    try {
+      const result = await sendTestEmail(formData);
+      setTestEmailStatus({
+        loading: false,
+        success: result.success,
+        message: result.message
+      });
+
+      // Clear status after 5 seconds
+      setTimeout(() => {
+        setTestEmailStatus({ loading: false, success: null, message: '' });
+      }, 5000);
+
+    } catch (error) {
+      setTestEmailStatus({
+        loading: false,
+        success: false,
+        message: `❌ Erro inesperado: ${error.message}`
+      });
+    }
+  };
   if (!isOpen) return null;
 
   return (
@@ -237,33 +276,48 @@ const EmailConfig: React.FC<EmailConfigProps> = ({
               
               {/* Test Email Button */}
               <div className="pt-4 border-t dark:border-gray-600">
+                {/* Test Email Status */}
+                {testEmailStatus.message && (
+                  <div className={`mb-4 p-3 rounded-lg flex items-center space-x-2 ${
+                    testEmailStatus.success === true
+                      ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                      : testEmailStatus.success === false
+                      ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                      : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                  }`}>
+                    {testEmailStatus.loading ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                    ) : testEmailStatus.success === true ? (
+                      <CheckCircle className="h-4 w-4" />
+                    ) : testEmailStatus.success === false ? (
+                      <AlertCircle className="h-4 w-4" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                    <span className="text-sm">{testEmailStatus.message}</span>
+                  </div>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => {
-                    // Create a test reminder to send email
-                    const testReminder = {
-                      id: 'test-' + Date.now(),
-                      title: 'Teste de Email',
-                      description: 'Este é um email de teste do Lembrete Pro',
-                      date: new Date().toISOString().split('T')[0],
-                      time: new Date().toTimeString().split(' ')[0].slice(0, 5),
-                      completed: false,
-                      notified: false,
-                      notification_enabled: true,
-                      owner_id: 'test',
-                      created_at: new Date().toISOString()
-                    };
-                    
-                    // Test email sending
-                    console.log('🧪 Enviando email de teste...');
-                    alert('Funcionalidade de email em desenvolvimento. Por enquanto, use apenas as notificações do navegador que funcionam perfeitamente!');
-                  }}
-                  className="w-full px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors text-sm"
+                  onClick={handleTestEmail}
+                  disabled={testEmailStatus.loading || !formData.enabled}
+                  className="w-full px-4 py-2 bg-green-600 dark:bg-green-700 text-white rounded-lg hover:bg-green-700 dark:hover:bg-green-600 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
-                  📧 Enviar Email de Teste
+                  {testEmailStatus.loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4" />
+                      <span>📧 Enviar Email de Teste</span>
+                    </>
+                  )}
                 </button>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
-                  Em desenvolvimento - Use as notificações do navegador
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                  Teste suas configurações antes de salvar
                 </p>
               </div>
             </>
