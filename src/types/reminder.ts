@@ -11,6 +11,7 @@ export interface Reminder {
   created_at: string;
   notified: boolean;
   notification_enabled: boolean;
+  image?: string; // Base64 encoded image
 }
 
 export interface Profile {
@@ -34,6 +35,28 @@ export interface EmailConfig {
   senderPassword: string;
   recipientEmail: string;
   enabled: boolean;
+}
+
+export interface CleanupConfig {
+  autoCleanupEnabled: boolean;
+  cleanupCompletedAfterDays: number;
+  cleanupOverdueAfterDays: number;
+  lastCleanup?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  type: 'user' | 'bot';
+  content: string;
+  timestamp: Date;
+}
+
+export interface ParsedReminder {
+  title: string;
+  description?: string;
+  date: string;
+  time: string;
+  confidence: number;
 }
 
 export type ViewMode = 'month' | 'week';

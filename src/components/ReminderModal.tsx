@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, FileText, Bell, User, Users, UserMinus } from 'lucide-react';
+import { X, Calendar, Clock, FileText, Bell, User, Users, UserMinus, Upload, Image as ImageIcon } from 'lucide-react';
 import { Reminder, Profile } from '../types/reminder';
 import { formatDate, formatTime } from '../utils/reminderUtils';
 
@@ -29,6 +29,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
   const [notificationEnabled, setNotificationEnabled] = useState(true);
   const [assignedToUserId, setAssignedToUserId] = useState<string | null>(null);
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
+  const [image, setImage] = useState<string>('');
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   useEffect(() => {
@@ -40,6 +41,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
       setNotificationEnabled(editingReminder.notification_enabled);
       setAssignedToUserId(editingReminder.assigned_to_user_id || null);
       setAssignedUserIds(editingReminder.assigned_users?.map(user => user.id) || []);
+      setImage(editingReminder.image || '');
     } else {
       setTitle('');
       setDescription('');
@@ -48,6 +50,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
       setNotificationEnabled(true);
       setAssignedToUserId(null);
       setAssignedUserIds([]);
+      setImage('');
     }
     setErrors({});
   }, [editingReminder, selectedDate, isOpen]);
@@ -87,6 +90,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
       notified: editingReminder?.notified || false,
       notification_enabled: notificationEnabled,
       assigned_to_user_id: assignedUserIds.length > 0 ? assignedUserIds[0] : null, // For backward compatibility
+      image: image || undefined,
     };
 
     onSave(reminderData, assignedUserIds);
@@ -112,17 +116,47 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
     setAssignedUserIds(prev => prev.filter(id => id !== userId));
   };
 
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+        setErrors(prev => ({ ...prev, image: 'Apenas arquivos JPG, JPEG e PNG são aceitos' }));
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setErrors(prev => ({ ...prev, image: 'Imagem deve ter no máximo 5MB' }));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImage(e.target?.result as string);
+        setErrors(prev => ({ ...prev, image: '' }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setImage('');
+    setErrors(prev => ({ ...prev, image: '' }));
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto transition-colors">
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ background: 'rgba(0, 0, 0, 0.8)' }}>
+      <div className="card-glass max-w-md w-full max-h-[90vh] overflow-y-auto transition-colors animate-fade-in-up">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white transition-colors">
+        <div className="flex items-center justify-between p-6 border-b border-glass">
+          <h3 className="text-lg font-semibold transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
             {editingReminder ? 'Editar Lembrete' : 'Novo Lembrete'}
           </h3>
           <button
             onClick={handleClose}
-            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="glass-hover p-2 rounded-lg transition-colors neon-glow"
+            style={{ color: 'var(--text-secondary)' }}
           >
             <X className="h-6 w-6" />
           </button>
@@ -132,7 +166,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Title */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
               <FileText className="h-4 w-4 mr-2" />
               Título
             </label>
@@ -140,33 +174,81 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors ${
-                errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              className={`input-glass w-full ${
+                errors.title ? 'border-red-500' : ''
               }`}
               placeholder="Digite o título do lembrete"
             />
             {errors.title && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.title}</p>
+              <p className="mt-1 text-sm" style={{ color: '#FF4444' }}>{errors.title}</p>
             )}
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
+            <label className="block text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-primary)' }}>
               Descrição (opcional)
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="input-glass w-full"
               placeholder="Adicione detalhes sobre o lembrete"
             />
           </div>
 
+          {/* Image Upload */}
+          <div>
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+              <ImageIcon className="h-4 w-4 mr-2" />
+              Imagem (opcional)
+            </label>
+            
+            {image ? (
+              <div className="relative">
+                <img
+                  src={image}
+                  alt="Preview"
+                  className="w-full h-32 object-cover rounded-lg glass border border-glass"
+                />
+                <button
+                  type="button"
+                  onClick={removeImage}
+                  className="absolute top-2 right-2 glass-hover p-1 rounded-full transition-colors"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png"
+                  onChange={handleImageUpload}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                <div className="glass-hover border-2 border-dashed border-glass rounded-lg p-6 text-center transition-colors">
+                  <Upload className="h-8 w-8 mx-auto mb-2 neon-glow" style={{ color: 'var(--text-secondary)' }} />
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    Clique para adicionar uma imagem
+                  </p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                    JPG, JPEG ou PNG (máx. 5MB)
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {errors.image && (
+              <p className="mt-1 text-sm" style={{ color: '#FF4444' }}>{errors.image}</p>
+            )}
+          </div>
+
           {/* Date */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
               <Calendar className="h-4 w-4 mr-2" />
               Data
             </label>
@@ -174,18 +256,18 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors ${
-                errors.date ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              className={`input-glass w-full ${
+                errors.date ? 'border-red-500' : ''
               }`}
             />
             {errors.date && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.date}</p>
+              <p className="mt-1 text-sm" style={{ color: '#FF4444' }}>{errors.date}</p>
             )}
           </div>
 
           {/* Time */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
               <Clock className="h-4 w-4 mr-2" />
               Horário
             </label>
@@ -193,18 +275,18 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-colors ${
-                errors.time ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+              className={`input-glass w-full ${
+                errors.time ? 'border-red-500' : ''
               }`}
             />
             {errors.time && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.time}</p>
+              <p className="mt-1 text-sm" style={{ color: '#FF4444' }}>{errors.time}</p>
             )}
           </div>
 
           {/* Assign to User */}
           <div>
-            <label className="flex items-center text-sm font-medium text-gray-700 dark:text-gray-200 mb-2 transition-colors">
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
               <Users className="h-4 w-4 mr-2" />
               Compartilhar com usuários (opcional)
             </label>
@@ -219,15 +301,16 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                   return (
                     <div key={userId} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
                       <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                        <span className="text-sm text-gray-700 dark:text-gray-200">
+                        <User className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-blue)' }} />
+                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
                           {user.display_name || user.email}
                         </span>
                       </div>
                       <button
                         type="button"
                         onClick={() => removeAssignedUser(userId)}
-                        className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                        className="glass-hover p-1 rounded transition-colors neon-glow"
+                        style={{ color: '#FF4444' }}
                       >
                         <UserMinus className="h-4 w-4" />
                       </button>
@@ -246,7 +329,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                   e.target.value = ''; // Reset selection
                 }
               }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="input-glass w-full"
             >
               <option value="">+ Adicionar usuário</option>
               {availableProfiles
@@ -257,21 +340,25 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                   </option>
                 ))}
             </select>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
               Selecione usuários para compartilhar este lembrete com eles
             </p>
           </div>
 
           {/* Notification Toggle */}
-          <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg transition-colors">
+          <div className="flex items-center justify-between p-4 glass rounded-lg transition-colors">
             <div className="flex items-center space-x-3">
-              <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <Bell className="h-5 w-5 neon-glow" style={{ color: 'var(--neon-blue)' }} />
               <div>
-                <h4 className="font-medium text-gray-900 dark:text-white transition-colors">Notificar no horário</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-300 transition-colors">Receber notificação quando chegar a hora</p>
+                <h4 className="font-medium transition-colors" style={{ color: 'var(--text-primary)' }}>Notificar no horário</h4>
+                <p className="text-sm transition-colors" style={{ color: 'var(--text-secondary)' }}>Receber notificação quando chegar a hora</p>
               </div>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <div 
+              className={`toggle-switch ${notificationEnabled ? 'active' : ''}`}
+              onClick={() => setNotificationEnabled(!notificationEnabled)}
+            />
+            {/* <label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 checked={notificationEnabled}
@@ -279,7 +366,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 dark:bg-gray-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600 dark:peer-checked:bg-blue-700"></div>
-            </label>
+            </label> */}
           </div>
 
           {/* Buttons */}
@@ -287,13 +374,13 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 px-4 py-2 text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="flex-1 btn-neon"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors"
+              className="flex-1 btn-primary"
             >
               {editingReminder ? 'Salvar' : 'Criar'}
             </button>

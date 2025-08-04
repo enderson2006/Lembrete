@@ -1,4 +1,5 @@
 import { Reminder, Profile } from '../types/reminder';
+import { CleanupConfig } from '../types/reminder';
 import { supabase } from '../lib/supabase';
 
 // Database operations
@@ -194,6 +195,51 @@ export const getDaysWithReminders = (reminders: Reminder[], year: number, month:
     }
   });
   return days;
+};
+
+// Cleanup functions
+export const cleanupOldReminders = async (
+  reminders: Reminder[], 
+  config: CleanupConfig, 
+  userId: string
+): Promise<number> => {
+  if (!config.autoCleanupEnabled) {
+    return 0;
+  }
+
+  const now = new Date();
+  const completedCutoff = new Date(now.getTime() - (config.cleanupCompletedAfterDays * 24 * 60 * 60 * 1000));
+  const overdueCutoff = new Date(now.getTime() - (config.cleanupOverdueAfterDays * 24 * 60 * 60 * 1000));
+
+  let cleanedCount = 0;
+
+  for (const reminder of reminders) {
+    let shouldDelete = false;
+
+    // Check if completed reminder is old enough
+    if (reminder.completed) {
+      const reminderDate = new Date(reminder.date);
+      if (reminderDate < completedCutoff) {
+        shouldDelete = true;
+      }
+    }
+    // Check if overdue reminder is old enough
+    else if (isPast(reminder.date, reminder.time)) {
+      const reminderDateTime = parseDateTime(reminder.date, reminder.time);
+      if (reminderDateTime < overdueCutoff) {
+        shouldDelete = true;
+      }
+    }
+
+    if (shouldDelete) {
+      const success = await deleteReminder(reminder.id);
+      if (success) {
+        cleanedCount++;
+      }
+    }
+  }
+
+  return cleanedCount;
 };
 
 // Migration function to move localStorage data to Supabase

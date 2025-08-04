@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Settings, Bell, BellOff, LogOut, Moon, Sun } from 'lucide-react';
+import { Plus, Settings, Bell, BellOff, LogOut, Moon, Sun, MessageCircle, Trash2, Archive } from 'lucide-react';
 import Calendar from './components/Calendar';
 import ReminderModal from './components/ReminderModal';
 import ReminderList from './components/ReminderList';
 import EmailConfig from './components/EmailConfig';
+import CleanupConfig from './components/CleanupConfig';
+import ChatBot from './components/ChatBot';
 import Auth from './components/Auth';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import { useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
-import { Reminder, EmailConfig as EmailConfigType, ViewMode, Profile } from './types/reminder';
+import { Reminder, EmailConfig as EmailConfigType, ViewMode, Profile, CleanupConfig as CleanupConfigType } from './types/reminder';
 import {
   fetchReminders,
   fetchProfiles,
@@ -20,6 +22,7 @@ import {
   getDaysWithReminders,
   migrateLocalStorageToSupabase,
   createLocalDate,
+  cleanupOldReminders,
 } from './utils/reminderUtils';
 import {
   requestNotificationPermission,
@@ -38,6 +41,8 @@ function App() {
   const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEmailConfigOpen, setIsEmailConfigOpen] = useState(false);
+  const [isCleanupConfigOpen, setIsCleanupConfigOpen] = useState(false);
+  const [isChatBotOpen, setIsChatBotOpen] = useState(false);
   const [editingReminder, setEditingReminder] = useState<Reminder | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [loadingReminders, setLoadingReminders] = useState(false);
@@ -48,6 +53,11 @@ function App() {
     senderPassword: '',
     recipientEmail: '',
     enabled: false,
+  });
+  const [cleanupConfig, setCleanupConfig] = useState<CleanupConfigType>({
+    autoCleanupEnabled: false,
+    cleanupCompletedAfterDays: 7,
+    cleanupOverdueAfterDays: 30,
   });
 
   // Load data on mount
@@ -86,6 +96,12 @@ function App() {
       const savedEmailConfig = localStorage.getItem('emailConfig');
       if (savedEmailConfig) {
         setEmailConfig(JSON.parse(savedEmailConfig));
+      }
+
+      // Load cleanup config from localStorage
+      const savedCleanupConfig = localStorage.getItem('cleanupConfig');
+      if (savedCleanupConfig) {
+        setCleanupConfig(JSON.parse(savedCleanupConfig));
       }
 
       // Request notification permission
@@ -263,6 +279,25 @@ function App() {
     localStorage.setItem('emailConfig', JSON.stringify(config));
   };
 
+  const handleSaveCleanupConfig = (config: CleanupConfigType) => {
+    setCleanupConfig(config);
+    localStorage.setItem('cleanupConfig', JSON.stringify(config));
+  };
+
+  const handleManualCleanup = async () => {
+    if (confirm('Tem certeza que deseja executar a limpeza agora? Esta ação não pode ser desfeita.')) {
+      const cleanedCount = await cleanupOldReminders(reminders, cleanupConfig, user!.id);
+      if (cleanedCount > 0) {
+        // Reload reminders after cleanup
+        const updatedReminders = await fetchReminders(user!.id);
+        setReminders(updatedReminders);
+        alert(`${cleanedCount} lembretes foram limpos com sucesso!`);
+      } else {
+        alert('Nenhum lembrete precisava ser limpo.');
+      }
+    }
+  };
+
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
     const selectedDateObj = createLocalDate(date);
@@ -298,28 +333,29 @@ function App() {
   const pendingReminders = totalReminders - completedReminders;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+    <div className="min-h-screen transition-colors animate-fade-in-up" style={{ background: 'var(--bg-primary)' }}>
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 transition-colors">
+      <header className="glass border-b border-glass transition-colors">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white transition-colors">
+              <h1 className="text-2xl font-bold neon-glow transition-colors" style={{ color: 'var(--text-primary)' }}>
                 Lembrete Pro
+                <span className="text-sm font-normal ml-2" style={{ color: 'var(--neon-cyan)' }}>Neo Aurora</span>
               </h1>
-              <div className="hidden sm:flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300">
-                <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-3 py-1 rounded-full transition-colors">
+              <div className="hidden sm:flex items-center space-x-4 text-sm">
+                <span className="glass px-3 py-1 rounded-full transition-colors text-neon-blue">
                   {totalReminders} total
                 </span>
-                <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-3 py-1 rounded-full transition-colors">
+                <span className="glass px-3 py-1 rounded-full transition-colors text-neon-cyan">
                   {completedReminders} concluídos
                 </span>
-                <span className="bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-200 px-3 py-1 rounded-full transition-colors">
+                <span className="glass px-3 py-1 rounded-full transition-colors text-neon-orange">
                   {pendingReminders} pendentes
                 </span>
                 {/* PWA Status Indicator */}
                 {window.matchMedia && window.matchMedia('(display-mode: standalone)').matches && (
-                  <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 px-3 py-1 rounded-full transition-colors flex items-center space-x-1">
+                  <span className="glass px-3 py-1 rounded-full transition-colors flex items-center space-x-1 text-neon-purple">
                     <span>📱</span>
                     <span>App Mode</span>
                   </span>
@@ -329,14 +365,15 @@ function App() {
             
             <div className="flex items-center space-x-2">
               {/* User info */}
-              <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-300 mr-4">
+              <div className="hidden sm:flex items-center space-x-2 text-sm mr-4" style={{ color: 'var(--text-secondary)' }}>
                 <span>Olá, {user.email}</span>
               </div>
 
               {/* Theme toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                style={{ color: 'var(--text-secondary)' }}
                 title={theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
               >
                 {theme === 'light' ? (
@@ -348,11 +385,12 @@ function App() {
 
               <button
                 onClick={toggleNotifications}
-                className={`p-2 rounded-lg transition-colors ${
+                className={`p-2 rounded-lg transition-colors glass-hover neon-glow ${
                   notificationsEnabled
-                    ? 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30'
-                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'text-neon-green'
+                    : ''
                 }`}
+                style={{ color: notificationsEnabled ? 'var(--neon-green)' : 'var(--text-secondary)' }}
                 title={
                   notificationsEnabled 
                     ? 'Notificações ativas'
@@ -368,15 +406,35 @@ function App() {
 
               <button
                 onClick={() => setIsEmailConfigOpen(true)}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                style={{ color: 'var(--text-secondary)' }}
                 title="Configurações de e-mail"
               >
                 <Settings className="h-5 w-5" />
               </button>
 
               <button
+                onClick={() => setIsCleanupConfigOpen(true)}
+                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                style={{ color: 'var(--text-secondary)' }}
+                title="Configurações de limpeza"
+              >
+                <Archive className="h-5 w-5" />
+              </button>
+
+              <button
+                onClick={handleManualCleanup}
+                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                style={{ color: 'var(--neon-orange)' }}
+                title="Limpeza manual"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+
+              <button
                 onClick={handleSignOut}
-                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                style={{ color: 'var(--text-secondary)' }}
                 title="Sair"
               >
                 <LogOut className="h-5 w-5" />
@@ -384,7 +442,7 @@ function App() {
               
               <button
                 onClick={handleAddReminder}
-                className="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors flex items-center space-x-2"
+                className="btn-primary px-4 py-2 rounded-lg transition-colors flex items-center space-x-2"
               >
                 <Plus className="h-4 w-4" />
                 <span className="hidden sm:inline">Novo Lembrete</span>
@@ -397,12 +455,12 @@ function App() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {loadingReminders ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-3 text-gray-600 dark:text-gray-300">Carregando lembretes...</span>
+          <div className="flex items-center justify-center py-12 animate-fade-in-up">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--neon-cyan)' }}></div>
+            <span className="ml-3" style={{ color: 'var(--text-secondary)' }}>Carregando lembretes...</span>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in-up">
             {/* Calendar */}
             <div>
               <Calendar
@@ -449,8 +507,32 @@ function App() {
         onSave={handleSaveEmailConfig}
       />
 
+      <CleanupConfig
+        isOpen={isCleanupConfigOpen}
+        onClose={() => setIsCleanupConfigOpen(false)}
+        config={cleanupConfig}
+        onSave={handleSaveCleanupConfig}
+      />
+
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
+
+      {/* ChatBot */}
+      <ChatBot
+        isOpen={isChatBotOpen}
+        onClose={() => setIsChatBotOpen(false)}
+        onCreateReminder={handleSaveReminder}
+        selectedDate={selectedDate}
+      />
+
+      {/* ChatBot Toggle Button */}
+      <button
+        onClick={() => setIsChatBotOpen(true)}
+        className="fixed bottom-6 right-6 w-14 h-14 btn-primary rounded-full flex items-center justify-center shadow-lg animate-pulse-neon z-40"
+        title="Assistente de Lembretes"
+      >
+        <MessageCircle className="h-6 w-6" />
+      </button>
     </div>
   );
 }

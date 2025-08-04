@@ -107,36 +107,44 @@ const Calendar: React.FC<CalendarProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 transition-colors">
+    <div className="card-glass p-6 transition-colors animate-fade-in-up">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <CalendarIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white transition-colors">
+          <CalendarIcon className="h-6 w-6 neon-glow" style={{ color: 'var(--neon-cyan)' }} />
+          <h2 className="text-xl font-semibold transition-colors" style={{ color: 'var(--text-primary)' }}>
             {monthNames[month]} {year}
           </h2>
         </div>
         
         <div className="flex items-center space-x-3">
           {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 transition-colors">
+          <div className="flex glass rounded-lg p-1 transition-colors">
             <button
               onClick={() => onViewModeChange('month')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+              className={`px-3 py-1 rounded text-sm font-medium transition-all ${
                 viewMode === 'month'
-                  ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
+                  ? 'glass-hover neon-glow shadow-sm'
+                  : 'hover:glass-hover'
               }`}
+              style={{ 
+                color: viewMode === 'month' ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                background: viewMode === 'month' ? 'var(--bg-glass-hover)' : 'transparent'
+              }}
             >
               Mês
             </button>
             <button
               onClick={() => onViewModeChange('week')}
-              className={`px-3 py-1 rounded text-sm font-medium transition-colors ${
+              className={`px-3 py-1 rounded text-sm font-medium transition-all ${
                 viewMode === 'week'
-                  ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
+                  ? 'glass-hover neon-glow shadow-sm'
+                  : 'hover:glass-hover'
               }`}
+              style={{ 
+                color: viewMode === 'week' ? 'var(--neon-cyan)' : 'var(--text-secondary)',
+                background: viewMode === 'week' ? 'var(--bg-glass-hover)' : 'transparent'
+              }}
             >
               Semana
             </button>
@@ -146,13 +154,15 @@ const Calendar: React.FC<CalendarProps> = ({
           <div className="flex space-x-1">
             <button
               onClick={() => navigateMonth(-1)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+              style={{ color: 'var(--text-secondary)' }}
             >
               <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
             </button>
             <button
               onClick={() => navigateMonth(1)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+              style={{ color: 'var(--text-secondary)' }}
             >
               <ChevronRight className="h-5 w-5 text-gray-600 dark:text-gray-300" />
             </button>
@@ -165,7 +175,7 @@ const Calendar: React.FC<CalendarProps> = ({
         <div className="grid grid-cols-7 gap-2">
           {/* Week day headers */}
           {weekDays.map((day) => (
-            <div key={day} className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2 transition-colors">
+            <div key={day} className="text-center text-sm font-medium py-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
               {day}
             </div>
           ))}
@@ -177,22 +187,26 @@ const Calendar: React.FC<CalendarProps> = ({
               <button
                 key={index}
                 onClick={() => onDateSelect(dateString)}
-                className={`relative h-12 rounded-lg transition-all duration-200 ${
+                className={`calendar-day relative h-12 rounded-lg transition-all duration-200 ${
                   dayInfo.isCurrentMonth
                     ? isSelected(dayInfo.date)
-                      ? 'bg-blue-600 dark:bg-blue-700 text-white shadow-md scale-105'
+                      ? 'selected text-white shadow-md scale-105'
                       : isToday(dayInfo.date)
-                      ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
-                    : 'text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-400'
-                }`}
+                      ? 'glass-hover neon-glow'
+                      : 'glass-hover'
+                    : 'opacity-50'
+                } ${hasReminder(dayInfo.date) ? 'has-reminder' : ''}`}
+                style={{ 
+                  color: dayInfo.isCurrentMonth 
+                    ? isSelected(dayInfo.date) 
+                      ? 'white' 
+                      : isToday(dayInfo.date)
+                        ? 'var(--neon-cyan)'
+                        : 'var(--text-primary)'
+                    : 'var(--text-secondary)'
+                }}
               >
                 <span className="text-sm font-medium">{dayInfo.day}</span>
-                {hasReminder(dayInfo.date) && (
-                  <div className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
-                    isSelected(dayInfo.date) ? 'bg-white' : 'bg-green-500 dark:bg-green-400'
-                  }`} />
-                )}
               </button>
             );
           })}
@@ -201,7 +215,7 @@ const Calendar: React.FC<CalendarProps> = ({
         /* Week View */
         <div className="grid grid-cols-7 gap-2">
           {weekDays.map((day) => (
-            <div key={day} className="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2 transition-colors">
+            <div key={day} className="text-center text-sm font-medium py-2 transition-colors" style={{ color: 'var(--text-secondary)' }}>
               {day}
             </div>
           ))}
@@ -212,20 +226,22 @@ const Calendar: React.FC<CalendarProps> = ({
               <button
                 key={index}
                 onClick={() => onDateSelect(dateString)}
-                className={`relative h-16 rounded-lg transition-all duration-200 ${
+                className={`calendar-day relative h-16 rounded-lg transition-all duration-200 ${
                   isSelected(date)
-                    ? 'bg-blue-600 dark:bg-blue-700 text-white shadow-md scale-105'
+                    ? 'selected text-white shadow-md scale-105'
                     : isToday(date)
-                    ? 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'
-                }`}
+                    ? 'glass-hover neon-glow'
+                    : 'glass-hover'
+                } ${hasReminder(date) ? 'has-reminder' : ''}`}
+                style={{ 
+                  color: isSelected(date) 
+                    ? 'white' 
+                    : isToday(date)
+                      ? 'var(--neon-cyan)'
+                      : 'var(--text-primary)'
+                }}
               >
                 <span className="text-lg font-medium">{date.getDate()}</span>
-                {hasReminder(date) && (
-                  <div className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
-                    isSelected(date) ? 'bg-white' : 'bg-green-500 dark:bg-green-400'
-                  }`} />
-                )}
               </button>
             );
           })}
