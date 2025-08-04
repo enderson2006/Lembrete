@@ -340,8 +340,8 @@ function App() {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
               <h1 className="text-2xl font-bold neon-glow transition-colors" style={{ color: 'var(--text-primary)' }}>
-                Lembrete Pro
-                <span className="text-sm font-normal ml-2" style={{ color: 'var(--neon-cyan)' }}>Neo Aurora</span>
+                Lembretes
+                <span className="text-sm font-normal ml-2" style={{ color: 'var(--neon-cyan)' }}></span>
               </h1>
               <div className="hidden sm:flex items-center space-x-4 text-sm">
                 <span className="glass px-3 py-1 rounded-full transition-colors text-neon-blue">
