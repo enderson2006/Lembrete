@@ -339,7 +339,7 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold neon-glow transition-colors" style={{ color: 'var(--text-primary)' }}>
+              <h1 className="text-2xl font-bold transition-colors" style={{ color: 'var(--text-primary)' }}>
                 Lembretes
                 <span className="text-sm font-normal ml-2" style={{ color: 'var(--neon-cyan)' }}></span>
               </h1>
@@ -372,7 +372,7 @@ function App() {
               {/* Theme toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                className="p-2 glass-hover rounded-lg transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
                 title={theme === 'light' ? 'Ativar tema escuro' : 'Ativar tema claro'}
               >
@@ -385,7 +385,7 @@ function App() {
 
               <button
                 onClick={toggleNotifications}
-                className={`p-2 rounded-lg transition-colors glass-hover neon-glow ${
+                className={`p-2 rounded-lg transition-colors glass-hover ${
                   notificationsEnabled
                     ? 'text-neon-green'
                     : ''
@@ -406,7 +406,7 @@ function App() {
 
               <button
                 onClick={() => setIsEmailConfigOpen(true)}
-                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                className="p-2 glass-hover rounded-lg transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
                 title="Configurações de e-mail"
               >
@@ -415,7 +415,7 @@ function App() {
 
               <button
                 onClick={() => setIsCleanupConfigOpen(true)}
-                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                className="p-2 glass-hover rounded-lg transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
                 title="Configurações de limpeza"
               >
@@ -424,7 +424,7 @@ function App() {
 
               <button
                 onClick={handleManualCleanup}
-                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                className="p-2 glass-hover rounded-lg transition-colors"
                 style={{ color: 'var(--neon-orange)' }}
                 title="Limpeza manual"
               >
@@ -433,7 +433,7 @@ function App() {
 
               <button
                 onClick={handleSignOut}
-                className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+                className="p-2 glass-hover rounded-lg transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
                 title="Sair"
               >
