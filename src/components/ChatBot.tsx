@@ -199,7 +199,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
         <div className="flex items-center justify-between p-4 border-b border-glass">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 rounded-full glass flex items-center justify-center">
-              <Bot className="h-5 w-5 neon-glow" style={{ color: 'var(--neon-cyan)' }} />
+              <Bot className="h-5 w-5" style={{ color: 'var(--neon-cyan)' }} />
             </div>
             <div>
               <h3 className="font-semibold transition-colors" style={{ color: 'var(--text-primary)' }}>
@@ -212,7 +212,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="glass-hover p-2 rounded-lg transition-colors neon-glow"
+            className="glass-hover p-2 rounded-lg transition-colors"
             style={{ color: 'var(--text-secondary)' }}
           >
             <X className="h-5 w-5" />
@@ -229,7 +229,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
               <div className={`chat-bubble ${message.type}`}>
                 {message.type === 'bot' && (
                   <div className="flex items-center space-x-2 mb-2">
-                    <Bot className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-cyan)' }} />
+                    <Bot className="h-4 w-4" style={{ color: 'var(--neon-cyan)' }} />
                     <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
                       Assistente
                     </span>
@@ -267,7 +267,7 @@ const ChatBot: React.FC<ChatBotProps> = ({
             <div className="flex justify-start">
               <div className="chat-bubble bot">
                 <div className="flex items-center space-x-2">
-                  <Bot className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-cyan)' }} />
+                  <Bot className="h-4 w-4" style={{ color: 'var(--neon-cyan)' }} />
                   <div className="flex space-x-1">
                     <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--neon-cyan)' }}></div>
                     <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--neon-cyan)', animationDelay: '0.2s' }}></div>

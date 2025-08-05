@@ -55,7 +55,7 @@ body {
 
 /* Neon Effects */
 .neon-glow {
-  filter: drop-shadow(0 0 10px currentColor);
+  /* Removed excessive glow from icons */
 }
 
 .neon-border {

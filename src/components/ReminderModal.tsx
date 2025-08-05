@@ -166,7 +166,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Title */}
           <div>
-            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-primary)' }}>
               <FileText className="h-4 w-4 mr-2" />
               Título
             </label>
@@ -200,7 +200,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
 
           {/* Image Upload */}
           <div>
-            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-primary)' }}>
               <ImageIcon className="h-4 w-4 mr-2" />
               Imagem (opcional)
             </label>
@@ -230,7 +230,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
                 <div className="glass-hover border-2 border-dashed border-glass rounded-lg p-6 text-center transition-colors">
-                  <Upload className="h-8 w-8 mx-auto mb-2 neon-glow" style={{ color: 'var(--text-secondary)' }} />
+                  <Upload className="h-8 w-8 mx-auto mb-2" style={{ color: 'var(--text-secondary)' }} />
                   <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     Clique para adicionar uma imagem
                   </p>
@@ -248,7 +248,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
 
           {/* Date */}
           <div>
-            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-primary)' }}>
               <Calendar className="h-4 w-4 mr-2" />
               Data
             </label>
@@ -267,7 +267,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
 
           {/* Time */}
           <div>
-            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-primary)' }}>
               <Clock className="h-4 w-4 mr-2" />
               Horário
             </label>
@@ -286,7 +286,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
 
           {/* Assign to User */}
           <div>
-            <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+            <label className="flex items-center text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-primary)' }}>
               <Users className="h-4 w-4 mr-2" />
               Compartilhar com usuários (opcional)
             </label>
@@ -301,7 +301,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                   return (
                     <div key={userId} className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
                       <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-blue)' }} />
+                        <User className="h-4 w-4" style={{ color: 'var(--neon-blue)' }} />
                         <span className="text-sm" style={{ color: 'var(--text-primary)' }}>
                           {user.display_name || user.email}
                         </span>
@@ -309,7 +309,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
                       <button
                         type="button"
                         onClick={() => removeAssignedUser(userId)}
-                        className="glass-hover p-1 rounded transition-colors neon-glow"
+                        className="glass-hover p-1 rounded transition-colors"
                         style={{ color: '#FF4444' }}
                       >
                         <UserMinus className="h-4 w-4" />
@@ -348,7 +348,7 @@ const ReminderModal: React.FC<ReminderModalProps> = ({
           {/* Notification Toggle */}
           <div className="flex items-center justify-between p-4 glass rounded-lg transition-colors">
             <div className="flex items-center space-x-3">
-              <Bell className="h-5 w-5 neon-glow" style={{ color: 'var(--neon-blue)' }} />
+              <Bell className="h-5 w-5" style={{ color: 'var(--neon-blue)' }} />
               <div>
                 <h4 className="font-medium transition-colors" style={{ color: 'var(--text-primary)' }}>Notificar no horário</h4>
                 <p className="text-sm transition-colors" style={{ color: 'var(--text-secondary)' }}>Receber notificação quando chegar a hora</p>

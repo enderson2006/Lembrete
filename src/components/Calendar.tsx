@@ -111,7 +111,7 @@ const Calendar: React.FC<CalendarProps> = ({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
-          <CalendarIcon className="h-6 w-6 neon-glow" style={{ color: 'var(--neon-cyan)' }} />
+          <CalendarIcon className="h-6 w-6" style={{ color: 'var(--neon-cyan)' }} />
           <h2 className="text-xl font-semibold transition-colors" style={{ color: 'var(--text-primary)' }}>
             {monthNames[month]} {year}
           </h2>
@@ -124,7 +124,7 @@ const Calendar: React.FC<CalendarProps> = ({
               onClick={() => onViewModeChange('month')}
               className={`px-3 py-1 rounded text-sm font-medium transition-all ${
                 viewMode === 'month'
-                  ? 'glass-hover neon-glow shadow-sm'
+                  ? 'glass-hover shadow-sm'
                   : 'hover:glass-hover'
               }`}
               style={{ 
@@ -138,7 +138,7 @@ const Calendar: React.FC<CalendarProps> = ({
               onClick={() => onViewModeChange('week')}
               className={`px-3 py-1 rounded text-sm font-medium transition-all ${
                 viewMode === 'week'
-                  ? 'glass-hover neon-glow shadow-sm'
+                  ? 'glass-hover shadow-sm'
                   : 'hover:glass-hover'
               }`}
               style={{ 
@@ -154,14 +154,14 @@ const Calendar: React.FC<CalendarProps> = ({
           <div className="flex space-x-1">
             <button
               onClick={() => navigateMonth(-1)}
-              className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+              className="p-2 glass-hover rounded-lg transition-colors"
               style={{ color: 'var(--text-secondary)' }}
             >
               <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
             </button>
             <button
               onClick={() => navigateMonth(1)}
-              className="p-2 glass-hover rounded-lg transition-colors neon-glow"
+              className="p-2 glass-hover rounded-lg transition-colors"
               style={{ color: 'var(--text-secondary)' }}
             >
               <ChevronRight className="h-5 w-5 text-gray-600 dark:text-gray-300" />
@@ -192,7 +192,7 @@ const Calendar: React.FC<CalendarProps> = ({
                     ? isSelected(dayInfo.date)
                       ? 'selected text-white shadow-md scale-105'
                       : isToday(dayInfo.date)
-                      ? 'glass-hover neon-glow'
+                      ? 'glass-hover'
                       : 'glass-hover'
                     : 'opacity-50'
                 } ${hasReminder(dayInfo.date) ? 'has-reminder' : ''}`}
@@ -230,7 +230,7 @@ const Calendar: React.FC<CalendarProps> = ({
                   isSelected(date)
                     ? 'selected text-white shadow-md scale-105'
                     : isToday(date)
-                    ? 'glass-hover neon-glow'
+                    ? 'glass-hover'
                     : 'glass-hover'
                 } ${hasReminder(date) ? 'has-reminder' : ''}`}
                 style={{ 

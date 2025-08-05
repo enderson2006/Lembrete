@@ -42,14 +42,14 @@ const CleanupConfig: React.FC<CleanupConfigProps> = ({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-glass">
           <div className="flex items-center space-x-3">
-            <Archive className="h-6 w-6 neon-glow" style={{ color: 'var(--neon-orange)' }} />
+            <Archive className="h-6 w-6" style={{ color: 'var(--neon-orange)' }} />
             <h3 className="text-lg font-semibold transition-colors" style={{ color: 'var(--text-primary)' }}>
               Configurações de Limpeza
             </h3>
           </div>
           <button
             onClick={onClose}
-            className="glass-hover p-2 rounded-lg transition-colors neon-glow"
+            className="glass-hover p-2 rounded-lg transition-colors"
             style={{ color: 'var(--text-secondary)' }}
           >
             <X className="h-6 w-6" />
@@ -62,7 +62,7 @@ const CleanupConfig: React.FC<CleanupConfigProps> = ({
           <div className="glass p-4 rounded-lg">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-3">
-                <Clock className="h-5 w-5 neon-glow" style={{ color: 'var(--neon-cyan)' }} />
+                <Clock className="h-5 w-5" style={{ color: 'var(--neon-cyan)' }} />
                 <div>
                   <h4 className="font-medium transition-colors" style={{ color: 'var(--text-primary)' }}>
                     Limpeza Automática
@@ -83,6 +83,7 @@ const CleanupConfig: React.FC<CleanupConfigProps> = ({
                 {/* Completed Reminders */}
                 <div>
                   <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+                  <label className="flex items-center text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-primary)' }}>
                     <Archive className="h-4 w-4 mr-2" />
                     Lembretes Concluídos
                   </label>
@@ -103,6 +104,7 @@ const CleanupConfig: React.FC<CleanupConfigProps> = ({
                 {/* Overdue Reminders */}
                 <div>
                   <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+                  <label className="flex items-center text-sm font-medium mb-2 transition-colors" style={{ color: 'var(--text-primary)' }}>
                     <Trash2 className="h-4 w-4 mr-2" />
                     Lembretes Vencidos
                   </label>
@@ -126,7 +128,7 @@ const CleanupConfig: React.FC<CleanupConfigProps> = ({
           {/* Warning */}
           <div className="glass p-4 rounded-lg border-l-4" style={{ borderLeftColor: 'var(--neon-orange)' }}>
             <div className="flex items-start space-x-3">
-              <AlertTriangle className="h-5 w-5 mt-0.5 neon-glow" style={{ color: 'var(--neon-orange)' }} />
+              <AlertTriangle className="h-5 w-5 mt-0.5" style={{ color: 'var(--neon-orange)' }} />
               <div>
                 <h4 className="font-medium transition-colors" style={{ color: 'var(--text-primary)' }}>
                   Atenção
@@ -143,7 +145,7 @@ const CleanupConfig: React.FC<CleanupConfigProps> = ({
           {formData.lastCleanup && (
             <div className="glass p-3 rounded-lg">
               <div className="flex items-center space-x-2">
-                <Calendar className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-cyan)' }} />
+                <Calendar className="h-4 w-4" style={{ color: 'var(--neon-cyan)' }} />
                 <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   Última limpeza: {new Date(formData.lastCleanup).toLocaleDateString('pt-BR')}
                 </span>

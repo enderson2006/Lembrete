@@ -42,7 +42,7 @@ const ReminderList: React.FC<ReminderListProps> = ({
           {dateString}
         </h3>
         <div className="text-center py-8">
-          <Calendar className="h-12 w-12 mx-auto mb-3 transition-colors neon-glow" style={{ color: 'var(--text-secondary)' }} />
+          <Calendar className="h-12 w-12 mx-auto mb-3 transition-colors" style={{ color: 'var(--text-secondary)' }} />
           <p className="transition-colors" style={{ color: 'var(--text-secondary)' }}>Nenhum lembrete para este dia</p>
           <p className="text-sm mt-1 transition-colors" style={{ color: 'var(--text-secondary)' }}>Clique em um dia do calendário para adicionar lembretes</p>
         </div>
@@ -115,7 +115,7 @@ const ReminderList: React.FC<ReminderListProps> = ({
                     <div className="flex-shrink-0">
                       {(reminder.assigned_to_user_id || (reminder.assigned_users && reminder.assigned_users.length > 0)) ? (
                         <div className="flex items-center space-x-1">
-                          <Users className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-purple)' }} title="Lembrete compartilhado" />
+                          <Users className="h-4 w-4" style={{ color: 'var(--neon-purple)' }} title="Lembrete compartilhado" />
                           {reminder.assigned_users && reminder.assigned_users.length > 1 && (
                             <span className="text-xs glass px-1.5 py-0.5 rounded-full" style={{ color: 'var(--neon-purple)' }}>
                               +{reminder.assigned_users.length}
@@ -135,7 +135,7 @@ const ReminderList: React.FC<ReminderListProps> = ({
                     {/* Notification indicator */}
                     <div className="flex-shrink-0">
                       {reminder.notification_enabled ? (
-                        <Bell className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-blue)' }} title="Notificação ativada" />
+                        <Bell className="h-4 w-4" style={{ color: 'var(--neon-blue)' }} title="Notificação ativada" />
                       ) : (
                         <BellOff className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} title="Notificação desativada" />
                       )}
@@ -209,18 +209,20 @@ const ReminderList: React.FC<ReminderListProps> = ({
                     
                     {isOverdue && !reminder.completed && (
                       <span className="font-medium neon-glow" style={{ color: '#FF4444' }}>
+                    {isOverdue && !reminder.completed && (
+                      <span className="font-medium" style={{ color: '#FF4444' }}>
                         Atrasado
                       </span>
                     )}
                     
                     {reminder.completed && (
-                      <span className="font-medium neon-glow" style={{ color: 'var(--neon-cyan)' }}>
+                      <span className="font-medium" style={{ color: 'var(--neon-cyan)' }}>
                         Concluído
                       </span>
                     )}
 
                     {!isOwner && (
-                      <span className="font-medium neon-glow" style={{ color: 'var(--neon-purple)' }}>
+                      <span className="font-medium" style={{ color: 'var(--neon-purple)' }}>
                         Atribuído por outro usuário
                       </span>
                     )}
@@ -231,7 +233,7 @@ const ReminderList: React.FC<ReminderListProps> = ({
                   {reminder.completed ? (
                     <button
                       onClick={() => onToggleComplete(reminder.id)}
-                      className="p-1.5 glass-hover rounded transition-all neon-glow"
+                      className="p-1.5 glass-hover rounded transition-all"
                       style={{ color: 'var(--text-secondary)' }}
                       title="Marcar como pendente"
                     >
@@ -242,7 +244,7 @@ const ReminderList: React.FC<ReminderListProps> = ({
                     isOwner && (
                       <button
                         onClick={() => onEdit(reminder)}
-                        className="p-1.5 glass-hover rounded transition-all neon-glow hover:text-neon-blue"
+                        className="p-1.5 glass-hover rounded transition-all hover:text-neon-blue"
                         style={{ color: 'var(--text-secondary)' }}
                         title="Editar lembrete"
                       >
@@ -255,7 +257,7 @@ const ReminderList: React.FC<ReminderListProps> = ({
                   {isOwner && (
                     <button
                       onClick={() => onDelete(reminder.id)}
-                      className="p-1.5 glass-hover rounded transition-all neon-glow"
+                      className="p-1.5 glass-hover rounded transition-all"
                       style={{ color: 'var(--text-secondary)' }}
                       title="Excluir lembrete"
                     >
