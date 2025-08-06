@@ -11,7 +11,7 @@ interface ReminderListProps {
   onEdit: (reminder: Reminder) => void;
 }
 
-export const ReminderList: React.FC<ReminderListProps> = ({
+const ReminderList: React.FC<ReminderListProps> = ({
   reminders,
   onToggleComplete,
   onDelete,
@@ -177,3 +177,5 @@ export const ReminderList: React.FC<ReminderListProps> = ({
     </>
   );
 };
+
+export default ReminderList;

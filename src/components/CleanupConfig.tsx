@@ -11,7 +11,7 @@ interface CleanupConfigProps {
   onCleanupNow: (settings: CleanupSettings) => void;
 }
 
-export const CleanupConfig: React.FC<CleanupConfigProps> = ({ onCleanupNow }) => {
+const CleanupConfig: React.FC<CleanupConfigProps> = ({ onCleanupNow }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState<CleanupSettings>({
     autoCleanupEnabled: false,
@@ -136,3 +136,5 @@ export const CleanupConfig: React.FC<CleanupConfigProps> = ({ onCleanupNow }) =>
     </div>
   );
 };
+
+export default CleanupConfig;
