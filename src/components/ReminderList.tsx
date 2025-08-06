@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Clock, CheckCircle, AlertCircle, Calendar, Image, X, Trash2, Edit } from 'lucide-react';
 import { Reminder } from '../types/reminder';
-import { format, isToday, isTomorrow, isPast } from 'date-fns';
+import { format, isToday, isTomorrow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { parseDateTime, isPast } from '../utils/reminderUtils';
 
 interface ReminderListProps {
   reminders: Reminder[];
@@ -23,7 +24,7 @@ const ReminderList: React.FC<ReminderListProps> = ({
     if (reminder.completed) {
       return <CheckCircle className="w-5 h-5 text-cyan-400" />;
     }
-    if (isPast(new Date(reminder.dateTime)) && !reminder.completed) {
+    if (isPast(reminder.date, reminder.time) && !reminder.completed) {
       return <AlertCircle className="w-5 h-5 text-orange-400" />;
     }
     return <Clock className="w-5 h-5 text-blue-400" />;
@@ -31,26 +32,27 @@ const ReminderList: React.FC<ReminderListProps> = ({
 
   const getStatusText = (reminder: Reminder) => {
     if (reminder.completed) return 'Concluído';
-    if (isPast(new Date(reminder.dateTime))) return 'Vencido';
+    if (isPast(reminder.date, reminder.time)) return 'Vencido';
     return 'Pendente';
   };
 
-  const getDateText = (dateTime: string) => {
-    const date = new Date(dateTime);
+  const getDateText = (dateString: string, timeString: string) => {
+    const date = parseDateTime(dateString, timeString);
     if (isToday(date)) return 'Hoje';
     if (isTomorrow(date)) return 'Amanhã';
     return format(date, 'dd/MM/yyyy', { locale: ptBR });
   };
 
-  const getTimeText = (dateTime: string) => {
-    return format(new Date(dateTime), 'HH:mm');
+  const getTimeText = (dateString: string, timeString: string) => {
+    const date = parseDateTime(dateString, timeString);
+    return format(date, 'HH:mm');
   };
 
   const sortedReminders = [...reminders].sort((a, b) => {
     if (a.completed !== b.completed) {
       return a.completed ? 1 : -1;
     }
-    return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+    return parseDateTime(a.date, a.time).getTime() - parseDateTime(b.date, b.time).getTime();
   });
 
   if (reminders.length === 0) {
@@ -118,14 +120,14 @@ const ReminderList: React.FC<ReminderListProps> = ({
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="w-4 h-4 text-purple-400" />
                     <span className="text-gray-300">
-                      {getDateText(reminder.dateTime)} às {getTimeText(reminder.dateTime)}
+                      {getDateText(reminder.date, reminder.time)} às {getTimeText(reminder.date, reminder.time)}
                     </span>
                   </div>
 
                   <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                     reminder.completed
                       ? 'bg-cyan-500/20 text-cyan-400'
-                      : isPast(new Date(reminder.dateTime))
+                      : isPast(reminder.date, reminder.time)
                       ? 'bg-orange-500/20 text-orange-400'
                       : 'bg-blue-500/20 text-blue-400'
                   }`}>
