@@ -1,182 +1,274 @@
-import React, { useState } from 'react';
-import { Clock, CheckCircle, AlertCircle, Calendar, Image, X, Trash2, Edit } from 'lucide-react';
+import React from 'react';
+import { Clock, Calendar, Edit3, Trash2, Check, Undo, Bell, BellOff, User, Users } from 'lucide-react';
 import { Reminder } from '../types/reminder';
-import { format, isToday, isTomorrow } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { parseDateTime, isPast } from '../utils/reminderUtils';
+import { isPast, createLocalDate } from '../utils/reminderUtils';
 
 interface ReminderListProps {
   reminders: Reminder[];
-  onToggleComplete: (id: string) => void;
-  onDelete: (id: string) => void;
+  selectedDate: string;
   onEdit: (reminder: Reminder) => void;
+  onDelete: (id: string) => void;
+  onToggleComplete: (id: string) => void;
+  currentUserId: string;
 }
 
 const ReminderList: React.FC<ReminderListProps> = ({
   reminders,
-  onToggleComplete,
-  onDelete,
+  selectedDate,
   onEdit,
+  onDelete,
+  onToggleComplete,
+  currentUserId,
 }) => {
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-  const getStatusIcon = (reminder: Reminder) => {
-    if (reminder.completed) {
-      return <CheckCircle className="w-5 h-5 text-cyan-400" />;
-    }
-    if (isPast(reminder.date, reminder.time) && !reminder.completed) {
-      return <AlertCircle className="w-5 h-5 text-orange-400" />;
-    }
-    return <Clock className="w-5 h-5 text-blue-400" />;
-  };
-
-  const getStatusText = (reminder: Reminder) => {
-    if (reminder.completed) return 'Concluído';
-    if (isPast(reminder.date, reminder.time)) return 'Vencido';
-    return 'Pendente';
-  };
-
-  const getDateText = (dateString: string, timeString: string) => {
-    const date = parseDateTime(dateString, timeString);
-    if (isToday(date)) return 'Hoje';
-    if (isTomorrow(date)) return 'Amanhã';
-    return format(date, 'dd/MM/yyyy', { locale: ptBR });
-  };
-
-  const getTimeText = (dateString: string, timeString: string) => {
-    const date = parseDateTime(dateString, timeString);
-    return format(date, 'HH:mm');
-  };
-
-  const sortedReminders = [...reminders].sort((a, b) => {
-    if (a.completed !== b.completed) {
-      return a.completed ? 1 : -1;
-    }
-    return parseDateTime(a.date, a.time).getTime() - parseDateTime(b.date, b.time).getTime();
+  const selectedDateObj = createLocalDate(selectedDate);
+  const dateString = selectedDateObj.toLocaleDateString('pt-BR', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 
-  if (reminders.length === 0) {
+  const dayReminders = reminders.filter(reminder => reminder.date === selectedDate);
+  const sortedReminders = [...dayReminders].sort((a, b) => {
+    if (a.completed && !b.completed) return 1;
+    if (!a.completed && b.completed) return -1;
+    return a.time.localeCompare(b.time);
+  });
+
+  if (sortedReminders.length === 0) {
     return (
-      <div className="neo-card text-center py-12">
-        <Calendar className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-        <p className="text-gray-400 text-lg">Nenhum lembrete encontrado</p>
-        <p className="text-gray-500 text-sm mt-2">
-          Crie seu primeiro lembrete para começar!
-        </p>
+      <div className="card-glass p-6 transition-colors animate-slide-in-right">
+        <h3 className="text-lg font-semibold mb-4 capitalize transition-colors" style={{ color: 'var(--text-primary)' }}>
+          {dateString}
+        </h3>
+        <div className="text-center py-8">
+          <Calendar className="h-12 w-12 mx-auto mb-3 transition-colors neon-glow" style={{ color: 'var(--text-secondary)' }} />
+          <p className="transition-colors" style={{ color: 'var(--text-secondary)' }}>Nenhum lembrete para este dia</p>
+          <p className="text-sm mt-1 transition-colors" style={{ color: 'var(--text-secondary)' }}>Clique em um dia do calendário para adicionar lembretes</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="card-glass p-6 transition-colors animate-slide-in-right">
+      <h3 className="text-lg font-semibold mb-4 capitalize transition-colors" style={{ color: 'var(--text-primary)' }}>
+        {dateString}
+      </h3>
+      
       <div className="space-y-3">
-        {sortedReminders.map((reminder) => (
-          <div
-            key={reminder.id}
-            className={`neo-card hover:scale-[1.02] transition-all duration-300 ${
-              reminder.completed ? 'opacity-75' : ''
-            }`}
-          >
-            <div className="flex items-start gap-4">
-              <button
-                onClick={() => onToggleComplete(reminder.id)}
-                className="mt-1 hover:scale-110 transition-transform"
-              >
-                {getStatusIcon(reminder)}
-              </button>
-
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-2">
-                  <h3
-                    className={`font-medium text-white ${
-                      reminder.completed ? 'line-through text-gray-400' : ''
-                    }`}
-                  >
-                    {reminder.title}
-                  </h3>
-                  <div className="flex items-center gap-2">
+        {sortedReminders.map((reminder) => {
+          const isOverdue = !reminder.completed && isPast(reminder.date, reminder.time);
+          const isOwner = reminder.owner_id === currentUserId;
+          const isAssigned = reminder.assigned_to_user_id === currentUserId || 
+                           (reminder.assigned_users && reminder.assigned_users.some(user => user.id === currentUserId));
+          
+          return (
+            <div
+              key={reminder.id}
+              className={`p-4 rounded-lg border transition-all duration-200 glass floating ${
+                reminder.completed
+                  ? 'status-completed opacity-75'
+                  : isOverdue
+                  ? 'status-overdue'
+                  : 'status-pending hover:glass-hover'
+              }`}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-3 mb-2">
                     <button
-                      onClick={() => onEdit(reminder)}
-                      className="text-gray-400 hover:text-blue-400 transition-colors"
+                      onClick={() => onToggleComplete(reminder.id)}
+                      className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all neon-glow ${
+                        reminder.completed
+                          ? 'text-white'
+                          : 'hover:scale-110'
+                      }`}
+                      style={{
+                        backgroundColor: reminder.completed ? 'var(--neon-cyan)' : 'transparent',
+                        borderColor: reminder.completed ? 'var(--neon-cyan)' : 'var(--border-glass)'
+                      }}
                     >
-                      <Edit className="w-4 h-4" />
+                      {reminder.completed && <Check className="h-3 w-3" />}
                     </button>
-                    <button
-                      onClick={() => onDelete(reminder.id)}
-                      className="text-gray-400 hover:text-red-400 transition-colors"
+                    
+                    <h4
+                      className={`font-medium truncate transition-colors ${
+                        reminder.completed
+                          ? 'line-through opacity-75'
+                          : isOverdue
+                          ? ''
+                          : ''
+                      }`}
+                      style={{
+                        color: reminder.completed 
+                          ? 'var(--text-secondary)' 
+                          : isOverdue 
+                            ? '#FF4444' 
+                            : 'var(--text-primary)'
+                      }}
                     >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                      {reminder.title}
+                    </h4>
+
+                    {/* Assignment indicator */}
+                    <div className="flex-shrink-0">
+                      {(reminder.assigned_to_user_id || (reminder.assigned_users && reminder.assigned_users.length > 0)) ? (
+                        <div className="flex items-center space-x-1">
+                          <Users className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-purple)' }} title="Lembrete compartilhado" />
+                          {reminder.assigned_users && reminder.assigned_users.length > 1 && (
+                            <span className="text-xs glass px-1.5 py-0.5 rounded-full" style={{ color: 'var(--neon-purple)' }}>
+                              +{reminder.assigned_users.length}
+                            </span>
+                          )}
+                          {!isOwner && (
+                            <span className="text-xs glass px-2 py-1 rounded-full" style={{ color: 'var(--neon-purple)' }}>
+                              Atribuído
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <User className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} title="Lembrete pessoal" />
+                      )}
+                    </div>
+
+                    {/* Notification indicator */}
+                    <div className="flex-shrink-0">
+                      {reminder.notification_enabled ? (
+                        <Bell className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-blue)' }} title="Notificação ativada" />
+                      ) : (
+                        <BellOff className="h-4 w-4" style={{ color: 'var(--text-secondary)' }} title="Notificação desativada" />
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {reminder.description && (
-                  <p className="text-gray-300 text-sm mt-1 line-clamp-2">
-                    {reminder.description}
-                  </p>
-                )}
-
-                <div className="flex items-center gap-4 mt-3">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-purple-400" />
-                    <span className="text-gray-300">
-                      {getDateText(reminder.date, reminder.time)} às {getTimeText(reminder.date, reminder.time)}
-                    </span>
-                  </div>
-
-                  <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    reminder.completed
-                      ? 'bg-cyan-500/20 text-cyan-400'
-                      : isPast(reminder.date, reminder.time)
-                      ? 'bg-orange-500/20 text-orange-400'
-                      : 'bg-blue-500/20 text-blue-400'
-                  }`}>
-                    {getStatusText(reminder)}
-                  </div>
-                </div>
-
-                {reminder.image && (
-                  <div className="mt-3">
-                    <button
-                      onClick={() => setSelectedImage(reminder.image!)}
-                      className="relative group"
-                    >
+                  {/* Image thumbnail */}
+                  {reminder.image && (
+                    <div className="mb-2">
                       <img
                         src={reminder.image}
-                        alt="Anexo do lembrete"
-                        className="w-16 h-16 object-cover rounded-lg border border-gray-600 hover:border-cyan-400 transition-colors"
+                        alt="Reminder attachment"
+                        className="w-16 h-16 object-cover rounded-lg cursor-pointer glass-hover transition-all"
+                        onClick={() => {
+                          // Open lightbox
+                          const lightbox = document.createElement('div');
+                          lightbox.className = 'lightbox-overlay';
+                          lightbox.innerHTML = `
+                            <div class="lightbox-content">
+                              <img src="${reminder.image}" alt="Reminder attachment" class="max-w-full max-h-full" />
+                            </div>
+                          `;
+                          lightbox.onclick = () => document.body.removeChild(lightbox);
+                          document.body.appendChild(lightbox);
+                        }}
                       />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                        <Image className="w-6 h-6 text-white" />
-                      </div>
-                    </button>
+                    </div>
+                  )}
+
+                  {reminder.description && (
+                    <p
+                      className={`text-sm mb-2 transition-colors ${
+                        reminder.completed
+                          ? 'opacity-75'
+                          : isOverdue
+                          ? ''
+                          : ''
+                      }`}
+                      style={{
+                        color: reminder.completed 
+                          ? 'var(--text-secondary)' 
+                          : isOverdue 
+                            ? '#FF4444' 
+                            : 'var(--text-secondary)'
+                      }}
+                    >
+                      {reminder.description}
+                    </p>
+                  )}
+
+                  <div className="flex items-center space-x-4 text-xs">
+                    <span
+                      className={`flex items-center transition-colors ${
+                        reminder.completed
+                          ? 'opacity-75'
+                          : isOverdue
+                          ? ''
+                          : ''
+                      }`}
+                      style={{
+                        color: reminder.completed 
+                          ? 'var(--text-secondary)' 
+                          : isOverdue 
+                            ? '#FF4444' 
+                            : 'var(--text-secondary)'
+                      }}
+                    >
+                      <Clock className="h-3 w-3 mr-1" />
+                      {reminder.time}
+                    </span>
+                    
+                    {isOverdue && !reminder.completed && (
+                      <span className="font-medium neon-glow" style={{ color: '#FF4444' }}>
+                        Atrasado
+                      </span>
+                    )}
+                    
+                    {reminder.completed && (
+                      <span className="font-medium neon-glow" style={{ color: 'var(--neon-cyan)' }}>
+                        Concluído
+                      </span>
+                    )}
+
+                    {!isOwner && (
+                      <span className="font-medium neon-glow" style={{ color: 'var(--neon-purple)' }}>
+                        Atribuído por outro usuário
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
+
+                <div className="flex items-center space-x-2 ml-4">
+                  {reminder.completed ? (
+                    <button
+                      onClick={() => onToggleComplete(reminder.id)}
+                      className="p-1.5 glass-hover rounded transition-all neon-glow"
+                      style={{ color: 'var(--text-secondary)' }}
+                      title="Marcar como pendente"
+                    >
+                      <Undo className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    // Only show edit button for owners
+                    isOwner && (
+                      <button
+                        onClick={() => onEdit(reminder)}
+                        className="p-1.5 glass-hover rounded transition-all neon-glow hover:text-neon-blue"
+                        style={{ color: 'var(--text-secondary)' }}
+                        title="Editar lembrete"
+                      >
+                        <Edit3 className="h-4 w-4" />
+                      </button>
+                    )
+                  )}
+                  
+                  {/* Only show delete button for owners */}
+                  {isOwner && (
+                    <button
+                      onClick={() => onDelete(reminder.id)}
+                      className="p-1.5 glass-hover rounded transition-all neon-glow"
+                      style={{ color: 'var(--text-secondary)' }}
+                      title="Excluir lembrete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-
-      {/* Lightbox para visualização de imagem */}
-      {selectedImage && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="relative max-w-4xl max-h-full">
-            <button
-              onClick={() => setSelectedImage(null)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 transition-colors"
-            >
-              <X className="w-8 h-8" />
-            </button>
-            <img
-              src={selectedImage}
-              alt="Visualização ampliada"
-              className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-            />
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 };
 

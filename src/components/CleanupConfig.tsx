@@ -1,137 +1,173 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Trash2, Archive, Calendar, Check } from 'lucide-react';
-
-interface CleanupSettings {
-  autoCleanupEnabled: boolean;
-  cleanupCompletedAfterDays: number;
-  cleanupOverdueAfterDays: number;
-}
+import { X, Archive, Trash2, Calendar, Clock, AlertTriangle } from 'lucide-react';
+import { CleanupConfig as CleanupConfigType } from '../types/reminder';
 
 interface CleanupConfigProps {
-  onCleanupNow: (settings: CleanupSettings) => void;
+  isOpen: boolean;
+  onClose: () => void;
+  config: CleanupConfigType;
+  onSave: (config: CleanupConfigType) => void;
 }
 
-const CleanupConfig: React.FC<CleanupConfigProps> = ({ onCleanupNow }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [settings, setSettings] = useState<CleanupSettings>({
-    autoCleanupEnabled: false,
-    cleanupCompletedAfterDays: 7,
-    cleanupOverdueAfterDays: 30,
-  });
+const CleanupConfig: React.FC<CleanupConfigProps> = ({
+  isOpen,
+  onClose,
+  config,
+  onSave,
+}) => {
+  const [formData, setFormData] = useState<CleanupConfigType>(config);
 
   useEffect(() => {
-    const savedSettings = localStorage.getItem('cleanupSettings');
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
-    }
-  }, []);
+    setFormData(config);
+  }, [config, isOpen]);
 
-  const saveSettings = (newSettings: CleanupSettings) => {
-    setSettings(newSettings);
-    localStorage.setItem('cleanupSettings', JSON.stringify(newSettings));
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+    onClose();
   };
 
-  const handleCleanupNow = () => {
-    onCleanupNow(settings);
-    setIsOpen(false);
+  const handleInputChange = (field: keyof CleanupConfigType, value: string | number | boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="neo-button-secondary flex items-center gap-2 text-sm"
-      >
-        <Settings className="w-4 h-4" />
-        Limpeza
-      </button>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="neo-card w-full max-w-md">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
-            <Settings className="w-5 h-5 text-cyan-400" />
-            Configurações de Limpeza
-          </h3>
+    <div className="fixed inset-0 flex items-center justify-center p-4 z-50" style={{ background: 'rgba(0, 0, 0, 0.8)' }}>
+      <div className="card-glass max-w-md w-full max-h-[90vh] overflow-y-auto transition-colors animate-fade-in-up">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-glass">
+          <div className="flex items-center space-x-3">
+            <Archive className="h-6 w-6 neon-glow" style={{ color: 'var(--neon-orange)' }} />
+            <h3 className="text-lg font-semibold transition-colors" style={{ color: 'var(--text-primary)' }}>
+              Configurações de Limpeza
+            </h3>
+          </div>
           <button
-            onClick={() => setIsOpen(false)}
-            className="text-gray-400 hover:text-white transition-colors"
+            onClick={onClose}
+            className="glass-hover p-2 rounded-lg transition-colors neon-glow"
+            style={{ color: 'var(--text-secondary)' }}
           >
-            ✕
+            <X className="h-6 w-6" />
           </button>
         </div>
 
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <label className="text-gray-300 flex items-center gap-2">
-              <Archive className="w-4 h-4 text-purple-400" />
-              Limpeza Automática
-            </label>
-            <button
-              onClick={() => saveSettings({ ...settings, autoCleanupEnabled: !settings.autoCleanupEnabled })}
-              className={`relative w-12 h-6 rounded-full transition-colors ${
-                settings.autoCleanupEnabled ? 'bg-cyan-500' : 'bg-gray-600'
-              }`}
-            >
-              <div
-                className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${
-                  settings.autoCleanupEnabled ? 'translate-x-7' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-gray-300 mb-2 flex items-center gap-2">
-                <Check className="w-4 h-4 text-cyan-400" />
-                Arquivar concluídos após (dias):
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="365"
-                value={settings.cleanupCompletedAfterDays}
-                onChange={(e) => saveSettings({ ...settings, cleanupCompletedAfterDays: parseInt(e.target.value) || 7 })}
-                className="neo-input w-full"
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+          {/* Auto Cleanup Toggle */}
+          <div className="glass p-4 rounded-lg">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <Clock className="h-5 w-5 neon-glow" style={{ color: 'var(--neon-cyan)' }} />
+                <div>
+                  <h4 className="font-medium transition-colors" style={{ color: 'var(--text-primary)' }}>
+                    Limpeza Automática
+                  </h4>
+                  <p className="text-sm transition-colors" style={{ color: 'var(--text-secondary)' }}>
+                    Limpar lembretes antigos automaticamente
+                  </p>
+                </div>
+              </div>
+              <div 
+                className={`toggle-switch ${formData.autoCleanupEnabled ? 'active' : ''}`}
+                onClick={() => handleInputChange('autoCleanupEnabled', !formData.autoCleanupEnabled)}
               />
             </div>
 
-            <div>
-              <label className="block text-gray-300 mb-2 flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-orange-400" />
-                Apagar vencidos após (dias):
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="365"
-                value={settings.cleanupOverdueAfterDays}
-                onChange={(e) => saveSettings({ ...settings, cleanupOverdueAfterDays: parseInt(e.target.value) || 30 })}
-                className="neo-input w-full"
-              />
+            {formData.autoCleanupEnabled && (
+              <div className="space-y-4 pt-4 border-t border-glass">
+                {/* Completed Reminders */}
+                <div>
+                  <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+                    <Archive className="h-4 w-4 mr-2" />
+                    Lembretes Concluídos
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Arquivar após</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={formData.cleanupCompletedAfterDays}
+                      onChange={(e) => handleInputChange('cleanupCompletedAfterDays', parseInt(e.target.value))}
+                      className="input-glass w-20 text-center"
+                    />
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>dias</span>
+                  </div>
+                </div>
+
+                {/* Overdue Reminders */}
+                <div>
+                  <label className="flex items-center text-sm font-medium mb-2 transition-colors neon-glow" style={{ color: 'var(--text-primary)' }}>
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Lembretes Vencidos
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Apagar após</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={formData.cleanupOverdueAfterDays}
+                      onChange={(e) => handleInputChange('cleanupOverdueAfterDays', parseInt(e.target.value))}
+                      className="input-glass w-20 text-center"
+                    />
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>dias</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Warning */}
+          <div className="glass p-4 rounded-lg border-l-4" style={{ borderLeftColor: 'var(--neon-orange)' }}>
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="h-5 w-5 mt-0.5 neon-glow" style={{ color: 'var(--neon-orange)' }} />
+              <div>
+                <h4 className="font-medium transition-colors" style={{ color: 'var(--text-primary)' }}>
+                  Atenção
+                </h4>
+                <p className="text-sm mt-1 transition-colors" style={{ color: 'var(--text-secondary)' }}>
+                  A limpeza automática é irreversível. Lembretes removidos não podem ser recuperados.
+                  Use a limpeza manual para ter mais controle sobre o processo.
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          {/* Last Cleanup Info */}
+          {formData.lastCleanup && (
+            <div className="glass p-3 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <Calendar className="h-4 w-4 neon-glow" style={{ color: 'var(--neon-cyan)' }} />
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Última limpeza: {new Date(formData.lastCleanup).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div className="flex space-x-3 pt-4">
             <button
-              onClick={handleCleanupNow}
-              className="neo-button-primary flex-1 flex items-center justify-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Limpar Agora
-            </button>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="neo-button-secondary flex-1"
+              type="button"
+              onClick={onClose}
+              className="flex-1 btn-neon"
             >
               Cancelar
             </button>
+            <button
+              type="submit"
+              className="flex-1 btn-primary"
+            >
+              Salvar
+            </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );
