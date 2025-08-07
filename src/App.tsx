@@ -78,15 +78,6 @@ function App() {
         setReminders(userReminders);
         setProfiles(allProfiles);
         
-        // Ensure current user has a profile
-        const userProfile = allProfiles.find(p => p.id === user.id);
-        if (!userProfile && user.email) {
-          await createProfile(user.id, user.email);
-          // Reload profiles after creating user profile
-          const updatedProfiles = await fetchProfiles();
-          setProfiles(updatedProfiles);
-        }
-        
         setLoadingReminders(false);
       };
 
