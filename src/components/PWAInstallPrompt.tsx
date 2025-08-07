@@ -31,7 +31,7 @@ const PWAInstallPrompt: React.FC = () => {
         if (!isInstalled) {
           setShowPrompt(true);
         }
-      }, 30000); // Show after 30 seconds
+      }, 5000); // Show after 5 seconds
     };
 
     // Listen for app installed event

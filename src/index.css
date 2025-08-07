@@ -50,12 +50,12 @@ body {
 .glass-hover:hover {
   background: var(--bg-glass-hover);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-glow);
+  /* box-shadow: var(--shadow-glow); */
 }
 
 /* Neon Effects */
 .neon-glow {
-  filter: drop-shadow(0 0 10px currentColor);
+  /* filter: drop-shadow(0 0 10px currentColor); */
 }
 
 .neon-border {
@@ -99,10 +99,10 @@ body {
 
 @keyframes pulse-neon {
   0%, 100% {
-    box-shadow: 0 0 5px currentColor;
+    opacity: 1;
   }
   50% {
-    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+    opacity: 0.7;
   }
 }
 
@@ -178,7 +178,7 @@ body {
 }
 
 .btn-primary:hover {
-  box-shadow: 0 10px 25px rgba(0, 102, 255, 0.4);
+  /* box-shadow: 0 10px 25px rgba(0, 102, 255, 0.4); */
 }
 
 /* Input Styles */
@@ -195,7 +195,7 @@ body {
 .input-glass:focus {
   outline: none;
   border-color: var(--neon-cyan);
-  box-shadow: 0 0 20px rgba(0, 217, 255, 0.2);
+  /* box-shadow: 0 0 20px rgba(0, 217, 255, 0.2); */
 }
 
 .input-glass::placeholder {
@@ -352,13 +352,13 @@ body {
   height: 6px;
   background: var(--neon-cyan);
   border-radius: 50%;
-  box-shadow: 0 0 10px var(--neon-cyan);
+  /* box-shadow: 0 0 10px var(--neon-cyan); */
 }
 
 .calendar-day.selected {
   background: linear-gradient(45deg, var(--neon-blue), var(--neon-cyan));
   color: white;
-  box-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+  /* box-shadow: 0 0 20px rgba(0, 217, 255, 0.5); */
 }
 
 /* Responsive Design */
